@@ -1,0 +1,18 @@
+# Dev server overlay — loaded by start-dev.sh
+# Ensures consistent full admin access for all developers
+
+backend:
+  auth:
+    dangerouslyDisableDefaultAuthPolicy: true
+
+auth:
+  environment: development
+  providers:
+    guest:
+      userEntityRef: user:development/guest
+      ownershipEntityRefs:
+        - user:development/guest
+        - group:default/team-a
+
+permission:
+  enabled: true

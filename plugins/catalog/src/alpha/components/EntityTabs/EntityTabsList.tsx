@@ -38,20 +38,34 @@ const useStyles = makeStyles(
       backgroundColor: theme.palette.background.paper,
       paddingLeft: theme.spacing(3),
       minWidth: 0,
+      borderRadius: '16px 16px 0 0',
+      marginTop: -12,
+      position: 'relative',
+      zIndex: 101,
+      boxShadow: 'none',
+      borderBottom: `1px solid ${theme.palette.divider}`,
     },
     defaultTab: {
       ...theme.typography.caption,
-      padding: theme.spacing(3, 3),
-      textTransform: 'uppercase',
-      fontWeight: theme.typography.fontWeightBold,
+      padding: theme.spacing(1.5, 2.5),
+      textTransform: 'none',
+      fontWeight: 500,
+      fontSize: '0.8125rem',
       color: theme.palette.text.secondary,
+      letterSpacing: '0.01em',
+      transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
     },
     selected: {
-      color: theme.palette.text.primary,
+      color: theme.palette.primary.main,
+      fontWeight: 600,
     },
     tabRoot: {
+      borderRadius: 8,
       '&:hover': {
-        backgroundColor: theme.palette.background.default,
+        backgroundColor:
+          theme.palette.type === 'dark'
+            ? 'rgba(255, 255, 255, 0.04)'
+            : 'rgba(124, 58, 237, 0.04)',
         color: theme.palette.text.primary,
       },
     },

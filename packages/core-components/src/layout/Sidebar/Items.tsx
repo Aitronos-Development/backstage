@@ -103,8 +103,10 @@ const makeSidebarStyles = (sidebarConfig: SidebarConfig) =>
         display: 'flex',
         flexFlow: 'row nowrap',
         alignItems: 'center',
-        height: 48,
+        height: 44,
         cursor: 'pointer',
+        margin: '2px 8px',
+        transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
       },
       buttonItem: {
         background: 'none',
@@ -128,22 +130,27 @@ const makeSidebarStyles = (sidebarConfig: SidebarConfig) =>
       highlightable: {
         '&:hover': {
           background:
-            theme.palette.navigation.navItem?.hoverBackground ?? '#404040',
+            theme.palette.navigation.navItem?.hoverBackground ??
+            'rgba(167, 139, 250, 0.12)',
+          borderRadius: 10,
         },
       },
       highlighted: {
         background:
-          theme.palette.navigation.navItem?.hoverBackground ?? '#404040',
+          theme.palette.navigation.navItem?.hoverBackground ??
+          'rgba(167, 139, 250, 0.12)',
+        borderRadius: 10,
       },
       label: {
-        // XXX (@koroeskohr): I can't seem to achieve the desired font-weight from the designs
-        fontWeight: 'bold',
+        fontWeight: 500,
         whiteSpace: 'nowrap',
         lineHeight: 'auto',
         flex: '3 1 auto',
         width: '110px',
         overflow: 'hidden',
         'text-overflow': 'ellipsis',
+        fontSize: '0.8125rem',
+        letterSpacing: '0.02em',
       },
       iconContainer: {
         boxSizing: 'border-box',
@@ -159,7 +166,7 @@ const makeSidebarStyles = (sidebarConfig: SidebarConfig) =>
         marginBottom: 12,
       },
       searchField: {
-        color: '#b5b5b5',
+        color: theme.palette.navigation.color,
         fontWeight: theme.typography.fontWeightBold,
         fontSize: theme.typography.fontSize,
       },
@@ -188,7 +195,11 @@ const makeSidebarStyles = (sidebarConfig: SidebarConfig) =>
         width: '100%',
         cursor: 'pointer',
         position: 'relative',
-        height: 48,
+        height: 44,
+        transition: 'color 200ms ease',
+        '&:hover': {
+          color: theme.palette.navigation.selectedColor,
+        },
       },
       arrows: {
         position: 'absolute',
@@ -196,18 +207,17 @@ const makeSidebarStyles = (sidebarConfig: SidebarConfig) =>
       },
       selected: {
         '&$root': {
-          borderLeft: `solid ${sidebarConfig.selectedIndicatorWidth}px ${theme.palette.navigation.indicator}`,
           color: theme.palette.navigation.selectedColor,
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          borderRadius: 10,
+          borderLeft: `3px solid ${theme.palette.navigation.indicator}`,
+          fontWeight: 600,
         },
         '&$closed': {
-          width: sidebarConfig.drawerWidthClosed,
+          width: sidebarConfig.drawerWidthClosed - 16,
         },
-        '& $closedItemIcon': {
-          paddingRight: sidebarConfig.selectedIndicatorWidth,
-        },
-        '& $iconContainer': {
-          marginLeft: -sidebarConfig.selectedIndicatorWidth,
-        },
+        '& $closedItemIcon': {},
+        '& $iconContainer': {},
       },
     }),
     { name: 'BackstageSidebarItem' },
@@ -681,10 +691,12 @@ export type SidebarDividerClassKey = 'root';
 export const SidebarDivider = styled('hr')(
   ({ theme }) => ({
     height: 1,
-    width: '100%',
-    background: '#383838',
+    width: 'calc(100% - 32px)',
+    background:
+      'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent)',
     border: 'none',
-    margin: theme.spacing(1.2, 0),
+    margin: `${theme.spacing(1.5)}px 0`,
+    marginLeft: 16,
   }),
   { name: 'BackstageSidebarDivider' },
 ) as ComponentType<ComponentProps<'hr'> & StyledComponentProps<'root'>>;

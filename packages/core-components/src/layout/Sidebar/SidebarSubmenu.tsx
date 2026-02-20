@@ -57,7 +57,7 @@ const useStyles = makeStyles<
       top: 0,
       bottom: 0,
       padding: 0,
-      background: theme.palette.navigation.submenu?.background ?? '#404040',
+      background: theme.palette.navigation.submenu?.background ?? theme.palette.navigation.background,
       overflowX: 'hidden',
       msOverflowStyle: 'none',
       scrollbarWidth: 'none',

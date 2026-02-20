@@ -27,3 +27,6 @@ dist-types
 
 # reduce the barrier for adopters to add themselves
 ADOPTERS.md
+
+# Compliance reports (auto-generated JSON)
+compliance_reports/

@@ -68,7 +68,7 @@ const useStyles = makeStyles<Theme, { sidebarConfig: SidebarConfig }>(
       right: 0,
       zIndex: theme.zIndex.snackbar,
       // SidebarDivider color
-      borderTop: '1px solid #383838',
+      borderTop: `1px solid rgba(255, 255, 255, 0.08)`,
       '@media print': {
         display: 'none',
       },

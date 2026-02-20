@@ -64,48 +64,41 @@ app:
             - custom:
                 title: Custom
 
-    # Entity page cards
-    - entity-card:catalog/about:
-        config:
-          type: info
-    - entity-card:catalog/labels
-    - entity-card:catalog/links:
-        config:
-          filter:
-            kind: component
-            metadata.links:
-              $exists: true
-          # filter: kind:component has:links
-          type: info
-    # - entity-card:linguist/languages
-    - entity-card:catalog-graph/relations:
-        config:
-          height: 300
-    - entity-card:api-docs/has-apis
-    - entity-card:api-docs/consumed-apis
-    - entity-card:api-docs/provided-apis
-    - entity-card:api-docs/providing-components
-    - entity-card:api-docs/consuming-components
-    # Org Plugin
-    - entity-card:org/group-profile
-    - entity-card:org/members-list
-    - entity-card:org/ownership
-    - entity-card:org/user-profile:
-        config:
-          maxRelations: 5
-          hideIcons: true
-    # - entity-card:azure-devops/readme
+    # Entity page cards — only Provided APIs, Consumed APIs, and Health
+    # Catalog cards
+    - entity-card:catalog/about: false
+    - entity-card:catalog/labels: false
+    - entity-card:catalog/links: false
+    - entity-card:catalog/depends-on-components: false
+    - entity-card:catalog/depends-on-resources: false
+    - entity-card:catalog/has-components: false
+    - entity-card:catalog/has-resources: false
+    - entity-card:catalog/has-subcomponents: false
+    - entity-card:catalog/has-subdomains: false
+    - entity-card:catalog/has-systems: false
+    # Catalog graph
+    - entity-card:catalog-graph/relations: false
+    # API docs — disable all defaults, use custom summary cards
+    - entity-card:api-docs/has-apis: false
+    - entity-card:api-docs/definition: false
+    - entity-card:api-docs/consumed-apis: false
+    - entity-card:api-docs/provided-apis: false
+    - entity-card:api-docs/providing-components: false
+    - entity-card:api-docs/consuming-components: false
+    # Org cards
+    - entity-card:org/group-profile: false
+    - entity-card:org/members-list: false
+    - entity-card:org/ownership: false
+    - entity-card:org/user-profile: false
 
     # Entity page contents
     - entity-content:catalog/overview:
         config:
           group: overview
-    - entity-content:api-docs/definition
-    - entity-content:api-docs/apis:
-        config:
-          # example associating with a default group
-          group: documentation
-          icon: kind:api
+    - entity-content:api-docs/definition: false
+    - entity-content:api-docs/apis: false
+    - entity-content:app/collapsible-apis: false
+    - entity-content:app/api-route-definition
     - entity-content:techdocs:
         config:
           group: documentation

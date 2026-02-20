@@ -1,18 +1,13 @@
-# To run local backstage instance with docker services,
-# run:
+# Docker overlay — adds Redis cache and OpenSearch on top of base config.
+# PostgreSQL is already configured in app-config.yaml.
+#
+# Usage:
 # 1. `docker compose -f docker-compose.deps.yml up --wait`
 # 2. `BACKSTAGE_ENV=docker yarn dev`
 backend:
-  database:
-    client: pg
-    connection:
-      host: localhost
-      port: 5432
-      user: postgres
-      password: postgres
   cache:
     store: redis
-    connection: redis://localhost:6379
+    connection: redis://localhost:6381
 
 search:
   elasticsearch:

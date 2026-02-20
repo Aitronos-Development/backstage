@@ -19,7 +19,7 @@ import { pageTheme as defaultPageThemes } from './pageTheme';
 
 const DEFAULT_HTML_FONT_SIZE = 16;
 const DEFAULT_FONT_FAMILY =
-  '"Helvetica Neue", Helvetica, Roboto, Arial, sans-serif';
+  '"Inter", Roboto, "Helvetica Neue", Arial, sans-serif';
 const DEFAULT_PAGE_THEME = 'home';
 
 /**
@@ -31,33 +31,37 @@ export const defaultTypography: BackstageTypography = {
   htmlFontSize: DEFAULT_HTML_FONT_SIZE,
   fontFamily: DEFAULT_FONT_FAMILY,
   h1: {
-    fontSize: 54,
-    fontWeight: 700,
-    marginBottom: 10,
-  },
-  h2: {
-    fontSize: 40,
-    fontWeight: 700,
-    marginBottom: 8,
-  },
-  h3: {
     fontSize: 32,
     fontWeight: 700,
+    marginBottom: 8,
+    letterSpacing: '-0.02em',
+  },
+  h2: {
+    fontSize: 24,
+    fontWeight: 700,
     marginBottom: 6,
+    letterSpacing: '-0.015em',
+  },
+  h3: {
+    fontSize: 20,
+    fontWeight: 600,
+    marginBottom: 4,
+    letterSpacing: '-0.01em',
   },
   h4: {
-    fontWeight: 700,
-    fontSize: 28,
-    marginBottom: 6,
+    fontWeight: 600,
+    fontSize: 18,
+    marginBottom: 4,
+    letterSpacing: '-0.01em',
   },
   h5: {
-    fontWeight: 700,
-    fontSize: 24,
-    marginBottom: 4,
+    fontWeight: 600,
+    fontSize: 15,
+    marginBottom: 2,
   },
   h6: {
-    fontWeight: 700,
-    fontSize: 20,
+    fontWeight: 600,
+    fontSize: 13,
     marginBottom: 2,
   },
 };

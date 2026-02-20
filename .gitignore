@@ -190,3 +190,22 @@ dist-storybook/
 
 # Personal allow patterns etc
 .claude/settings.local.json
+
+# Dev infrastructure state (start-dev.sh)
+.dev-env-state
+.dev-env-state-*
+.dev-reload-frozen
+.dev-ports-*
+
+# Branch-specific files (separate mode)
+docker-compose.deps-*.yml
+app-config.*.yaml
+!app-config.yaml
+!app-config.docker.yaml
+!app-config.dev.yaml
+
+# Compliance reports
+compliance_reports/
+
+# API testing execution history
+api-tests/.history/

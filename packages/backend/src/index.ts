@@ -20,6 +20,8 @@ import {
   coreServices,
   createBackendFeatureLoader,
 } from '@backstage/backend-plugin-api';
+import { spawn } from 'child_process';
+import path from 'path';
 
 const backend = createBackend();
 
@@ -74,4 +76,21 @@ backend.add(rootSystemMetadataServiceFactory);
 
 backend.add(import('@backstage/plugin-events-backend-module-google-pubsub'));
 backend.add(import('@backstage/plugin-mcp-actions-backend'));
+backend.add(import('@internal/plugin-api-testing-backend'));
+
+// Start API Testing MCP server alongside the backend
+const mcpServerScript = path.resolve(
+  __dirname,
+  '../../plugins/api-testing-mcp-server/src/index.ts',
+);
+const mcpServer = spawn('npx', ['tsx', mcpServerScript], {
+  stdio: ['pipe', 'pipe', 'inherit'],
+});
+
+mcpServer.on('error', err => {
+  console.error('[api-testing-mcp] MCP server failed to start', err);
+});
+
+process.on('exit', () => mcpServer.kill());
+
 backend.start();

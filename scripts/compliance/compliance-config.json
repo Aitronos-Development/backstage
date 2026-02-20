@@ -1,0 +1,206 @@
+{
+  "version": "1.0.0",
+  "description": "Backstage compliance check configuration",
+  "timeouts": {
+    "fast": 120,
+    "full": 300,
+    "ci": 300
+  },
+  "checks": {
+    "eslint_changed": {
+      "name": "ESLint (Changed Packages)",
+      "description": "Lint changed packages since origin/master",
+      "command": "yarn lint",
+      "scope": "all",
+      "category": "code_quality",
+      "enabled": true,
+      "enabledInFastMode": true,
+      "enabledInCi": false,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": "yarn backstage-cli repo lint --fix",
+      "blocksPush": true
+    },
+    "eslint_all": {
+      "name": "ESLint (All Packages)",
+      "description": "Lint all packages in the monorepo",
+      "command": "yarn lint:all",
+      "scope": "all",
+      "category": "code_quality",
+      "enabled": true,
+      "enabledInFastMode": false,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": null,
+      "blocksPush": true
+    },
+    "prettier_check": {
+      "name": "Prettier Format Check",
+      "description": "Verify code formatting with Prettier",
+      "command": "yarn prettier:check",
+      "scope": "all",
+      "category": "code_quality",
+      "enabled": true,
+      "enabledInFastMode": true,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": "yarn prettier:fix",
+      "blocksPush": true
+    },
+    "typescript_check": {
+      "name": "TypeScript Type Check",
+      "description": "Run TypeScript compiler type checking",
+      "command": "yarn tsc",
+      "scope": "all",
+      "category": "code_quality",
+      "enabled": true,
+      "enabledInFastMode": true,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": null,
+      "blocksPush": true
+    },
+    "verify_changesets": {
+      "name": "Verify Changesets",
+      "description": "Validate changeset files for correctness",
+      "command": "node scripts/verify-changesets.js",
+      "scope": "all",
+      "category": "project_structure",
+      "enabled": true,
+      "enabledInFastMode": false,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": null,
+      "blocksPush": true
+    },
+    "verify_local_deps": {
+      "name": "Verify Local Dependencies",
+      "description": "Ensure internal dependency version ranges are correct",
+      "command": "node scripts/verify-local-dependencies.js",
+      "scope": "all",
+      "category": "project_structure",
+      "enabled": true,
+      "enabledInFastMode": false,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": "node scripts/verify-local-dependencies.js --fix",
+      "blocksPush": true
+    },
+    "verify_peer_deps": {
+      "name": "Verify Peer Dependencies",
+      "description": "Check peer dependency ranges across packages",
+      "command": "yarn lint:peer-deps",
+      "scope": "all",
+      "category": "project_structure",
+      "enabled": true,
+      "enabledInFastMode": false,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": false
+      },
+      "autoFixCommand": null,
+      "blocksPush": false
+    },
+    "verify_type_deps": {
+      "name": "Verify Type Dependencies",
+      "description": "Check type dependency correctness",
+      "command": "yarn lint:type-deps",
+      "scope": "all",
+      "category": "project_structure",
+      "enabled": true,
+      "enabledInFastMode": false,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": false
+      },
+      "autoFixCommand": null,
+      "blocksPush": false
+    },
+    "verify_lockfile": {
+      "name": "Verify Lockfile (No Duplicates)",
+      "description": "Ensure yarn.lock has no duplicate dependencies",
+      "command": "node scripts/verify-lockfile-duplicates.js",
+      "scope": "all",
+      "category": "project_structure",
+      "enabled": true,
+      "enabledInFastMode": true,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": "node scripts/verify-lockfile-duplicates.js --fix",
+      "blocksPush": true
+    },
+    "circular_deps": {
+      "name": "Circular Dependency Check",
+      "description": "Detect circular dependencies using madge",
+      "command": "yarn lint:circular-deps",
+      "scope": "all",
+      "category": "code_quality",
+      "enabled": true,
+      "enabledInFastMode": false,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": false
+      },
+      "autoFixCommand": null,
+      "blocksPush": false
+    },
+    "api_reports": {
+      "name": "API Reports",
+      "description": "Generate and verify API reports for all packages",
+      "command": "yarn build:api-reports",
+      "scope": "all",
+      "category": "documentation",
+      "enabled": true,
+      "enabledInFastMode": false,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": null,
+      "blocksPush": true
+    },
+    "docs_quality": {
+      "name": "Documentation Quality (Vale)",
+      "description": "Check documentation quality with Vale linter",
+      "command": "yarn lint:docs",
+      "scope": "docs",
+      "category": "documentation",
+      "enabled": true,
+      "enabledInFastMode": false,
+      "enabledInCi": false,
+      "thresholds": {
+        "failOnError": false
+      },
+      "autoFixCommand": null,
+      "blocksPush": false
+    },
+    "project_cleanliness": {
+      "name": "Project Cleanliness",
+      "description": "Check project root for unexpected files",
+      "command": "node scripts/compliance/check-project-cleanliness.js",
+      "scope": "all",
+      "category": "project_structure",
+      "enabled": true,
+      "enabledInFastMode": true,
+      "enabledInCi": true,
+      "thresholds": {
+        "failOnError": true
+      },
+      "autoFixCommand": null,
+      "blocksPush": true
+    }
+  }
+}

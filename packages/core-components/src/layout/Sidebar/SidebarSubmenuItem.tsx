@@ -48,7 +48,7 @@ const useStyles = makeStyles(
       width: '100%',
       '&:hover': {
         background:
-          theme.palette.navigation.navItem?.hoverBackground || '#6f6f6f',
+          theme.palette.navigation.navItem?.hoverBackground || 'rgba(255, 255, 255, 0.05)',
         color: theme.palette.navigation.selectedColor,
       },
       display: 'flex',
@@ -64,8 +64,8 @@ const useStyles = makeStyles(
       width: '100%',
     },
     selected: {
-      background: '#6f6f6f',
-      color: theme.palette.common.white,
+      background: theme.palette.navigation.navItem?.hoverBackground || 'rgba(255, 255, 255, 0.08)',
+      color: theme.palette.navigation.selectedColor,
     },
     label: {
       margin: theme.spacing(1.75),
@@ -96,7 +96,7 @@ const useStyles = makeStyles(
       padding: '10px 0 10px 0',
       '&:hover': {
         background:
-          theme.palette.navigation.navItem?.hoverBackground || '#6f6f6f',
+          theme.palette.navigation.navItem?.hoverBackground || 'rgba(255, 255, 255, 0.05)',
         color: theme.palette.navigation.selectedColor,
       },
     },

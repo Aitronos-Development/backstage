@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Read(//Users/rahul/Documents/github/**)",
+      "WebFetch(domain:designsystems.surf)",
+      "WebFetch(domain:mypalettetool.com)",
+      "WebFetch(domain:vercel.com)",
+      "WebFetch(domain:www.mockplus.com)",
+      "WebFetch(domain:www.merveilleux.design)",
+      "WebFetch(domain:tailscan.com)",
+      "WebFetch(domain:ui.shadcn.com)"
+    ]
+  }
+}

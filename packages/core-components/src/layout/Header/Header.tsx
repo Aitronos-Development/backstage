@@ -42,9 +42,10 @@ const useStyles = makeStyles(
   theme => ({
     header: {
       gridArea: 'pageHeader',
-      padding: theme.spacing(3),
+      padding: theme.spacing(3, 4),
+      paddingBottom: theme.spacing(5),
       width: '100%',
-      boxShadow: theme.shadows[4],
+      boxShadow: 'none',
       position: 'relative',
       zIndex: 100,
       display: 'flex',
@@ -53,8 +54,35 @@ const useStyles = makeStyles(
       backgroundImage: theme.page.backgroundImage,
       backgroundPosition: 'center',
       backgroundSize: 'cover',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background:
+          theme.palette.type === 'dark'
+            ? 'radial-gradient(ellipse at 70% 20%, rgba(167, 139, 250, 0.08), transparent 60%)'
+            : 'radial-gradient(ellipse at 70% 20%, rgba(167, 139, 250, 0.15), transparent 60%)',
+        pointerEvents: 'none',
+      },
+      '&::after': {
+        content: '""',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '50%',
+        background:
+          theme.palette.type === 'dark'
+            ? 'linear-gradient(to top, rgba(0,0,0,0.25), transparent)'
+            : 'linear-gradient(to top, rgba(0,0,0,0.15), transparent)',
+        pointerEvents: 'none',
+      },
       [theme.breakpoints.down('sm')]: {
         flexWrap: 'wrap',
+        paddingBottom: theme.spacing(4),
       },
     },
     leftItemsBox: {
@@ -69,20 +97,28 @@ const useStyles = makeStyles(
       color: theme.page.fontColor,
       wordBreak: 'break-word',
       fontSize: theme.typography.h3.fontSize,
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
       marginBottom: 0,
+      textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
     },
     subtitle: {
       color: theme.page.fontColor,
       opacity: 0.8,
-      display: 'inline-block', // prevents margin collapse of adjacent siblings
-      marginTop: theme.spacing(1),
+      display: 'inline-block',
+      marginTop: theme.spacing(0.5),
       maxWidth: '75ch',
+      fontSize: '0.875rem',
+      fontWeight: 400,
+      letterSpacing: '0.01em',
     },
     type: {
       textTransform: 'uppercase',
       fontSize: 11,
-      opacity: 0.8,
-      marginBottom: theme.spacing(1),
+      fontWeight: 600,
+      letterSpacing: '0.1em',
+      opacity: 0.7,
+      marginBottom: theme.spacing(0.5),
       color: theme.page.fontColor,
     },
     breadcrumb: {

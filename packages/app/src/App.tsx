@@ -50,6 +50,7 @@ import { convertLegacyPageExtension } from '@backstage/core-compat-api';
 import { convertLegacyEntityContentExtension } from '@backstage/plugin-catalog-react/alpha';
 import { pluginInfoResolver } from './pluginInfoResolver';
 import { appModuleNav } from './modules/appModuleNav';
+import { entityExtensionsModule } from './modules/entityExtensions';
 import devtoolsPlugin from '@backstage/plugin-devtools/alpha';
 import { unprocessedEntitiesDevToolsContent } from '@backstage/plugin-catalog-unprocessed-entities/alpha';
 import catalogPlugin from '@backstage/plugin-catalog/alpha';
@@ -145,6 +146,7 @@ const customizedCatalog = catalogPlugin.withOverrides({
     catalogPlugin.getExtension('entity-content:catalog/overview').override({
       params: {
         icon: <InfoIcon />,
+        filter: entity => entity.kind !== 'API',
       },
     }),
   ],
@@ -177,6 +179,7 @@ const app = createApp({
     kubernetesPlugin,
     notFoundErrorPageModule,
     appModuleNav,
+    entityExtensionsModule,
     customHomePageModule,
     devtoolsPlugin,
     devtoolsPluginUnprocessed,

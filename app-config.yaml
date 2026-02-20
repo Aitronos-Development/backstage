@@ -50,8 +50,12 @@ backend:
   listen:
     port: 7007
   database:
-    client: better-sqlite3
-    connection: ':memory:'
+    client: pg
+    connection:
+      host: localhost
+      port: 5434
+      user: postgres
+      password: postgres
   cors:
     origin: http://localhost:3000
     methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
@@ -64,6 +68,7 @@ backend:
     allow:
       - host: example.com
       - host: '*.mozilla.org'
+      - host: localhost:8000
   # workingDirectory: /tmp # Use this to configure a working directory for the scaffolder, defaults to the OS temp-dir
   actions:
     pluginSources:
@@ -75,6 +80,10 @@ proxy:
       target: https://api.pagerduty.com
       headers:
         Authorization: Token token=${PAGERDUTY_TOKEN}
+    '/freddy-health':
+      target: 'http://localhost:8000'
+      changeOrigin: true
+      credentials: 'dangerously-allow-unauthenticated'
 
 organization:
   name: My Company
@@ -197,6 +206,9 @@ catalog:
       target: ../../plugins/scaffolder-backend/sample-templates/all-templates.yaml
       rules:
         - allow: [Template]
+    # Freddy Backend service + API entity
+    - type: file
+      target: ../../../freddy-portal/catalog-entities/freddy-backend.yaml
 
 scaffolder:
   auditor:
@@ -316,6 +328,25 @@ auth:
 
 permission:
   enabled: true
+
+apiTesting:
+  defaultEnvironment: develop
+  environments:
+    develop:
+      baseUrl: http://localhost:8000
+      variables:
+        auth_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NzE1ODIyNDUsImp0aSI6ImIwMjYxOTY4LTc1NGEtNGRmZi1iNjU1LWU3M2JhYWMxOWIxOSIsInR5cGUiOiJhY2Nlc3MiLCJzdWIiOiJ1c3JfYzc4Yzg2MWFmNWZiNGIyYWFmZWY2MzIxNDE1MmE2NTkiLCJuYmYiOjE3NzE1ODIyNDUsImV4cCI6MTc3MTY2ODY0NSwiZW52IjoibG9jYWwiLCJjdHgiOiJnQUFBQUFCcG1ETWxjaEhfWGpBRWdkTEpBUUVTTlBwU21Lcy1LRG84eXExSFpZbi12TUNudTFnckQ1RlJxcE5YZkc3QXBrdjRXV2ZPTWZBVW8wMEhSVW01Y3RGZGdhdUdKejdScDhsVi1sUkZva01TMUItRGl4ZmFFT2d1V0RkdExyZ3lsaVRmNUhqNiJ9.EVHmhB4MXtn-m3nMLwLTsiwMDolroLHJS-dRnz7qYuc
+        org_id: dev-org-001
+    staging:
+      baseUrl: https://staging-api.example.com
+      variables:
+        auth_token: staging-token-placeholder
+        org_id: staging-org-001
+    production:
+      baseUrl: https://api.example.com
+      variables:
+        auth_token: ''
+        org_id: ''
 
 devTools:
   scheduledTasks:

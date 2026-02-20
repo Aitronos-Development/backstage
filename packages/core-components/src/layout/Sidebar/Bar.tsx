@@ -62,7 +62,7 @@ const useStyles = makeStyles<Theme, { sidebarConfig: SidebarConfig }>(
       scrollbarWidth: 'none',
       transition: theme.transitions.create('width', {
         easing: theme.transitions.easing.sharp,
-        duration: theme.transitions.duration.shortest,
+        duration: theme.transitions.duration.shorter,
       }),
       '& > *': {
         flexShrink: 0,

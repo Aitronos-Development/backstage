@@ -1,0 +1,77 @@
+{
+  "route_group": "/v1/health",
+  "test_cases": [
+    {
+      "id": "tc-4x0ug6",
+      "name": "Health check returns 200",
+      "method": "GET",
+      "path": "/api/api-testing/health",
+      "assertions": {
+        "status_code": 200,
+        "body_contains": {
+          "status": "ok"
+        }
+      },
+      "created_at": "2026-02-19T13:02:47.523Z",
+      "updated_at": "2026-02-19T13:02:47.523Z"
+    },
+    {
+      "id": "tc-2x96lk",
+      "name": "Health check has status field",
+      "method": "GET",
+      "path": "/api/api-testing/health",
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "status"
+          ]
+        }
+      },
+      "created_at": "2026-02-19T13:02:52.541Z",
+      "updated_at": "2026-02-19T13:02:52.541Z"
+    },
+    {
+      "id": "tc-43niwp",
+      "name": "Liveness check returns 200",
+      "method": "GET",
+      "path": "/v1/health/",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_contains": {
+          "status": "ok"
+        },
+        "body_schema": {
+          "required_fields": [
+            "status"
+          ]
+        }
+      },
+      "created_at": "2026-02-20T10:14:51.000Z",
+      "updated_at": "2026-02-20T10:14:51.000Z"
+    },
+    {
+      "id": "tc-5wydod",
+      "name": "Readiness check returns 200 with service details",
+      "method": "GET",
+      "path": "/v1/health/details",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "status",
+            "services"
+          ]
+        }
+      },
+      "created_at": "2026-02-20T10:14:52.500Z",
+      "updated_at": "2026-02-20T10:14:52.500Z"
+    }
+  ]
+}

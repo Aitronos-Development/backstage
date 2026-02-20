@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "api-testing": {
+      "command": "npx",
+      "args": ["tsx", "plugins/api-testing-mcp-server/src/index.ts"],
+      "cwd": "/Users/rahul/Documents/github/backstage"
+    }
+  }
+}

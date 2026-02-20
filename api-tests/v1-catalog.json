@@ -1,0 +1,16 @@
+{
+  "route_group": "/v1/catalog",
+  "test_cases": [
+    {
+      "id": "tc-i3mcw5",
+      "name": "Catalog entities endpoint returns 200",
+      "method": "GET",
+      "path": "/api/catalog/entities",
+      "assertions": {
+        "status_code": 200
+      },
+      "created_at": "2026-02-19T13:02:53.817Z",
+      "updated_at": "2026-02-19T13:02:53.817Z"
+    }
+  ]
+}

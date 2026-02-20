@@ -61,10 +61,10 @@ export const sidebarConfig = {
   iconContainerWidth: drawerWidthClosed,
   iconSize: drawerWidthClosed - iconPadding * 2,
   iconPadding,
-  selectedIndicatorWidth: 3,
+  selectedIndicatorWidth: 0,
   userBadgePadding,
   userBadgeDiameter: drawerWidthClosed - userBadgePadding * 2,
-  mobileSidebarHeight: 56,
+  mobileSidebarHeight: 80,
 };
 
 export const makeSidebarConfig = (

@@ -28,6 +28,8 @@ import {
 import SearchIcon from '@material-ui/icons/Search';
 import MenuIcon from '@material-ui/icons/Menu';
 import BuildIcon from '@material-ui/icons/Build';
+import Brightness2Icon from '@material-ui/icons/Brightness2';
+import WbSunnyIcon from '@material-ui/icons/WbSunny';
 import { createFrontendModule } from '@backstage/frontend-plugin-api';
 import { NavContentBlueprint } from '@backstage/plugin-app-react';
 import { SidebarSearchModal } from '@backstage/plugin-search';
@@ -36,7 +38,11 @@ import {
   Settings,
   UserSettingsSignInAvatar,
 } from '@backstage/plugin-user-settings';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
+import { appThemeApiRef, useApi } from '@backstage/core-plugin-api';
+import { useObservable } from 'react-use';
+import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
 
 const useSidebarLogoStyles = makeStyles({
   root: {
@@ -98,6 +104,61 @@ const SidebarLogo = () => {
   );
 };
 
+const useSidebarThemeToggleStyles = makeStyles(theme => ({
+  root: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4px 0',
+    marginBottom: 4,
+  },
+  button: {
+    color: theme.palette.navigation.color,
+    width: 36,
+    height: 36,
+    transition: 'all 200ms ease',
+    '&:hover': {
+      color: theme.palette.navigation.selectedColor,
+      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    },
+  },
+}));
+
+const SidebarThemeToggle = () => {
+  const classes = useSidebarThemeToggleStyles();
+  const theme = useTheme();
+  const appThemeApi = useApi(appThemeApiRef);
+  const activeThemeId = useObservable(
+    appThemeApi.activeThemeId$(),
+    appThemeApi.getActiveThemeId(),
+  );
+  const isDark =
+    activeThemeId === 'dark' || theme.palette.type === 'dark';
+
+  const toggleTheme = () => {
+    appThemeApi.setActiveThemeId(isDark ? 'light' : 'dark');
+  };
+
+  return (
+    <div className={classes.root}>
+      <Tooltip title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'} placement="right">
+        <IconButton
+          className={classes.button}
+          onClick={toggleTheme}
+          size="small"
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? (
+            <WbSunnyIcon fontSize="small" />
+          ) : (
+            <Brightness2Icon fontSize="small" />
+          )}
+        </IconButton>
+      </Tooltip>
+    </div>
+  );
+};
+
 export const appModuleNav = createFrontendModule({
   pluginId: 'app',
   extensions: [
@@ -129,6 +190,7 @@ export const appModuleNav = createFrontendModule({
               </SidebarGroup>
               <SidebarDivider />
               <SidebarSpace />
+              <SidebarThemeToggle />
               <SidebarDivider />
               <SidebarGroup
                 label="Settings"
