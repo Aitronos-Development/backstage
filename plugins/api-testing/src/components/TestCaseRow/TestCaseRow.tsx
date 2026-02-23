@@ -57,22 +57,31 @@ function extractUsedVariables(testCase: TestCase): string[] {
   return Array.from(found).sort();
 }
 
+const MONO_FONT =
+  '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", monospace';
+
 const useStyles = makeStyles(theme => ({
   testRow: {
-    '&:nth-of-type(odd)': {
+    transition: 'background-color 150ms',
+    '&:hover': {
       backgroundColor:
         theme.palette.type === 'dark'
-          ? 'rgba(255,255,255,0.02)'
+          ? 'rgba(255,255,255,0.03)'
           : 'rgba(0,0,0,0.02)',
     },
     '& > td': {
       borderBottom: `1px solid ${theme.palette.divider}`,
+      padding: theme.spacing(1, 1.5),
     },
   },
   methodChip: {
     fontWeight: 700,
-    fontFamily: 'monospace',
-    minWidth: 60,
+    fontFamily: MONO_FONT,
+    fontSize: '0.72rem',
+    minWidth: 64,
+    height: 24,
+    borderRadius: 6,
+    letterSpacing: '0.02em',
   },
   get: { backgroundColor: '#61affe', color: '#fff' },
   post: { backgroundColor: '#49cc90', color: '#fff' },
@@ -82,13 +91,16 @@ const useStyles = makeStyles(theme => ({
   flow: { backgroundColor: '#9c27b0', color: '#fff' },
   nameCell: {
     fontWeight: 500,
+    fontSize: '0.85rem',
   },
   pathCell: {
-    fontFamily: 'monospace',
-    fontSize: '0.85rem',
+    fontFamily: MONO_FONT,
+    fontSize: '0.82rem',
+    color: theme.palette.text.secondary,
   },
   runButton: {
     color: theme.palette.success?.main || '#4caf50',
+    transition: 'all 150ms',
     '&:hover': {
       backgroundColor:
         theme.palette.type === 'dark'
@@ -99,61 +111,81 @@ const useStyles = makeStyles(theme => ({
   stopButton: {
     color: theme.palette.error.main,
   },
+  tuneButton: {
+    opacity: 0.6,
+    '&:hover': { opacity: 1 },
+    transition: 'opacity 150ms',
+  },
   detailsBox: {
     padding: theme.spacing(2),
-    backgroundColor: theme.palette.background.default,
-    borderRadius: theme.shape.borderRadius,
+    margin: theme.spacing(0.5, 0),
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(255,255,255,0.02)'
+        : 'rgba(0,0,0,0.015)',
+    borderRadius: 8,
+    border: `1px solid ${theme.palette.divider}`,
   },
   detailLabel: {
     fontWeight: 600,
+    fontSize: '0.82rem',
     marginBottom: theme.spacing(0.5),
   },
   pre: {
-    fontFamily: 'monospace',
-    fontSize: '0.8rem',
+    fontFamily: MONO_FONT,
+    fontSize: '0.78rem',
     backgroundColor:
       theme.palette.type === 'dark'
         ? theme.palette.grey[900]
         : theme.palette.grey[100],
     color: theme.palette.text.primary,
-    padding: theme.spacing(1),
-    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(1.5),
+    borderRadius: 8,
     overflow: 'auto',
     maxHeight: 300,
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
+    margin: 0,
+    border: `1px solid ${theme.palette.divider}`,
   },
   failureItem: {
-    marginBottom: theme.spacing(1),
+    marginBottom: theme.spacing(1.5),
   },
   runtimeSection: {
-    padding: theme.spacing(1, 2),
-    backgroundColor: theme.palette.background.default,
+    padding: theme.spacing(1.5, 2),
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(255,255,255,0.02)'
+        : 'rgba(0,0,0,0.01)',
     borderTop: `1px solid ${theme.palette.divider}`,
   },
   runtimeHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
+    marginBottom: theme.spacing(1),
   },
   runtimeRow: {
     display: 'flex',
     alignItems: 'center',
     gap: theme.spacing(1),
-    marginBottom: theme.spacing(0.5),
+    marginBottom: theme.spacing(0.75),
   },
   runtimeKey: {
-    fontFamily: 'monospace',
-    fontSize: '0.8rem',
+    fontFamily: MONO_FONT,
+    fontSize: '0.78rem',
     fontWeight: 600,
-    minWidth: 120,
+    minWidth: 130,
+    color: theme.palette.text.secondary,
   },
   runtimeInput: {
     '& input': {
-      fontFamily: 'monospace',
-      fontSize: '0.8rem',
-      padding: theme.spacing(0.5, 1),
+      fontFamily: MONO_FONT,
+      fontSize: '0.78rem',
+      padding: theme.spacing(0.75, 1),
+    },
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 6,
     },
   },
 }));
@@ -226,6 +258,7 @@ export function TestCaseRow({
           {hasVariables && (
             <IconButton
               size="small"
+              className={classes.tuneButton}
               onClick={() => setShowVars(prev => !prev)}
               title="Runtime variable overrides"
             >

@@ -17,21 +17,56 @@ import { makeStyles, Chip, CircularProgress } from '@material-ui/core';
 import type { TestStatus } from '../../api/types';
 
 const useStyles = makeStyles(theme => ({
+  base: {
+    fontWeight: 600,
+    fontSize: '0.72rem',
+    height: 24,
+    borderRadius: 6,
+    letterSpacing: '0.02em',
+  },
   pass: {
-    backgroundColor: theme.palette.success?.main || '#4caf50',
-    color: '#fff',
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(76,175,80,0.2)'
+        : 'rgba(76,175,80,0.12)',
+    color: theme.palette.type === 'dark' ? '#81c784' : '#2e7d32',
+    border: `1px solid ${
+      theme.palette.type === 'dark'
+        ? 'rgba(76,175,80,0.3)'
+        : 'rgba(76,175,80,0.25)'
+    }`,
   },
   fail: {
-    backgroundColor: theme.palette.error.main,
-    color: '#fff',
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(244,67,54,0.2)'
+        : 'rgba(244,67,54,0.12)',
+    color: theme.palette.type === 'dark' ? '#ef9a9a' : '#c62828',
+    border: `1px solid ${
+      theme.palette.type === 'dark'
+        ? 'rgba(244,67,54,0.3)'
+        : 'rgba(244,67,54,0.25)'
+    }`,
   },
   running: {
-    backgroundColor: theme.palette.info.main,
-    color: '#fff',
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(33,150,243,0.2)'
+        : 'rgba(33,150,243,0.12)',
+    color: theme.palette.type === 'dark' ? '#90caf9' : '#1565c0',
+    border: `1px solid ${
+      theme.palette.type === 'dark'
+        ? 'rgba(33,150,243,0.3)'
+        : 'rgba(33,150,243,0.25)'
+    }`,
   },
   idle: {
-    backgroundColor: theme.palette.grey[300],
-    color: theme.palette.text.secondary,
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(255,255,255,0.06)'
+        : theme.palette.grey[100],
+    color: theme.palette.text.disabled,
+    border: `1px solid ${theme.palette.divider}`,
   },
   spinner: {
     marginRight: theme.spacing(0.5),
@@ -54,7 +89,7 @@ export function TestResultBadge({
       return (
         <Chip
           size="small"
-          className={classes.pass}
+          className={`${classes.base} ${classes.pass}`}
           label={responseTime ? `Pass ${responseTime}ms` : 'Pass'}
         />
       );
@@ -62,7 +97,7 @@ export function TestResultBadge({
       return (
         <Chip
           size="small"
-          className={classes.fail}
+          className={`${classes.base} ${classes.fail}`}
           label={responseTime ? `Fail ${responseTime}ms` : 'Fail'}
         />
       );
@@ -70,10 +105,10 @@ export function TestResultBadge({
       return (
         <Chip
           size="small"
-          className={classes.running}
+          className={`${classes.base} ${classes.running}`}
           icon={
             <CircularProgress
-              size={14}
+              size={12}
               color="inherit"
               className={classes.spinner}
             />
@@ -82,6 +117,12 @@ export function TestResultBadge({
         />
       );
     default:
-      return <Chip size="small" className={classes.idle} label="—" />;
+      return (
+        <Chip
+          size="small"
+          className={`${classes.base} ${classes.idle}`}
+          label="—"
+        />
+      );
   }
 }

@@ -37,6 +37,9 @@ import type { ExecutionRecord } from '../../api/types';
 import { useExecutionHistory } from '../../hooks/useExecutionHistory';
 import { useExecutionHistoryContext } from './ExecutionHistoryContext';
 
+const MONO_FONT =
+  '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", monospace';
+
 const useStyles = makeStyles(theme => ({
   root: {
     padding: theme.spacing(0.5, 2),
@@ -44,22 +47,27 @@ const useStyles = makeStyles(theme => ({
   header: {
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing(0.5),
+    gap: theme.spacing(0.75),
     cursor: 'pointer',
-    padding: theme.spacing(0.25, 0),
-    opacity: 0.7,
+    padding: theme.spacing(0.5, 0.75),
+    borderRadius: 6,
+    transition: 'background-color 150ms, opacity 150ms',
+    opacity: 0.8,
     '&:hover': {
       opacity: 1,
+      backgroundColor:
+        theme.palette.type === 'dark'
+          ? 'rgba(255,255,255,0.04)'
+          : 'rgba(0,0,0,0.03)',
     },
-    transition: 'opacity 150ms',
   },
   headerIcon: {
-    fontSize: '1rem',
+    fontSize: '0.95rem',
     color: theme.palette.text.secondary,
   },
   headerText: {
-    fontSize: '0.8rem',
-    fontWeight: 500,
+    fontSize: '0.78rem',
+    fontWeight: 600,
     color: theme.palette.text.secondary,
   },
   filterBar: {
@@ -86,8 +94,12 @@ const useStyles = makeStyles(theme => ({
   },
   historyRow: {
     cursor: 'pointer',
+    transition: 'background-color 150ms',
     '&:hover': {
-      backgroundColor: theme.palette.action.hover,
+      backgroundColor:
+        theme.palette.type === 'dark'
+          ? 'rgba(255,255,255,0.04)'
+          : 'rgba(0,0,0,0.025)',
     },
   },
   timestamp: {
@@ -122,12 +134,17 @@ const useStyles = makeStyles(theme => ({
   duration: {
     fontSize: '0.75rem',
     color: theme.palette.text.secondary,
-    fontFamily: 'monospace',
+    fontFamily: MONO_FONT,
   },
   detailBox: {
-    padding: theme.spacing(1.5),
-    backgroundColor: theme.palette.background.default,
-    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(2),
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(255,255,255,0.02)'
+        : 'rgba(0,0,0,0.015)',
+    borderRadius: 8,
+    border: `1px solid ${theme.palette.divider}`,
+    margin: theme.spacing(0.5, 0),
   },
   detailLabel: {
     fontWeight: 600,
@@ -138,20 +155,21 @@ const useStyles = makeStyles(theme => ({
     marginBottom: theme.spacing(1),
   },
   pre: {
-    fontFamily: 'monospace',
+    fontFamily: MONO_FONT,
     fontSize: '0.75rem',
     backgroundColor:
       theme.palette.type === 'dark'
         ? theme.palette.grey[900]
         : theme.palette.grey[100],
     color: theme.palette.text.primary,
-    padding: theme.spacing(1),
-    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(1.5),
+    borderRadius: 8,
     overflow: 'auto',
     maxHeight: 200,
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
     margin: 0,
+    border: `1px solid ${theme.palette.divider}`,
   },
   showMore: {
     textAlign: 'center',

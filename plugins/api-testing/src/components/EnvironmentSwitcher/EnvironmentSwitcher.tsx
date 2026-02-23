@@ -23,12 +23,16 @@ import {
 
 const useStyles = makeStyles(theme => ({
   formControl: {
-    minWidth: 160,
-    marginRight: theme.spacing(2),
+    minWidth: 150,
+    marginRight: theme.spacing(1),
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 8,
+    },
   },
   select: {
-    fontFamily: 'monospace',
-    fontSize: '0.85rem',
+    fontFamily:
+      '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", monospace',
+    fontSize: '0.82rem',
   },
 }));
 
