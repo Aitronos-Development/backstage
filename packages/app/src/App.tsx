@@ -15,7 +15,6 @@
  */
 
 import { createApp } from '@backstage/frontend-defaults';
-import { pagesPlugin } from './examples/pagesPlugin';
 import notFoundErrorPage from './examples/notFoundErrorPageExtension';
 import userSettingsPlugin from '@backstage/plugin-user-settings/alpha';
 import homePlugin from '@backstage/plugin-home/alpha';
@@ -23,27 +22,28 @@ import homePlugin from '@backstage/plugin-home/alpha';
 import { createFrontendModule } from '@backstage/frontend-plugin-api';
 import {
   HomePageLayoutBlueprint,
-  type HomePageLayoutProps,
 } from '@backstage/plugin-home-react/alpha';
-import { Fragment } from 'react';
 import { Content, Header, Page } from '@backstage/core-components';
 import {
-  CustomHomepageGrid,
   WelcomeTitle,
-  HeaderWorldClock,
-  type ClockConfig,
+  HomePageStarredEntities,
+  HomePageToolkit,
 } from '@backstage/plugin-home';
+import Grid from '@material-ui/core/Grid';
+import CategoryIcon from '@material-ui/icons/Category';
+import LibraryBooksIcon from '@material-ui/icons/LibraryBooks';
+import BuildIcon from '@material-ui/icons/Build';
 import {
   techdocsPlugin,
   TechDocsIndexPage,
   TechDocsReaderPage,
   EntityTechdocsContent,
 } from '@backstage/plugin-techdocs';
-import appVisualizerPlugin from '@backstage/plugin-app-visualizer';
 import { convertLegacyAppRoot } from '@backstage/core-compat-api';
 import { FlatRoutes } from '@backstage/core-app-api';
-import { Route } from 'react-router';
+import { Route, Navigate } from 'react-router';
 import { CatalogImportPage } from '@backstage/plugin-catalog-import';
+import { ApiTestingPage } from './components/ApiTestingPage';
 import kubernetesPlugin from '@backstage/plugin-kubernetes/alpha';
 import { convertLegacyPlugin } from '@backstage/core-compat-api';
 import { convertLegacyPageExtension } from '@backstage/core-compat-api';
@@ -51,6 +51,7 @@ import { convertLegacyEntityContentExtension } from '@backstage/plugin-catalog-r
 import { pluginInfoResolver } from './pluginInfoResolver';
 import { appModuleNav } from './modules/appModuleNav';
 import { entityExtensionsModule } from './modules/entityExtensions';
+import { googleSignInModule } from './modules/googleSignInPage';
 import devtoolsPlugin from '@backstage/plugin-devtools/alpha';
 import { unprocessedEntitiesDevToolsContent } from '@backstage/plugin-catalog-unprocessed-entities/alpha';
 import catalogPlugin from '@backstage/plugin-catalog/alpha';
@@ -104,11 +105,10 @@ const convertedTechdocsPlugin = convertLegacyPlugin(techdocsPlugin, {
   ],
 });
 
-const clockConfigs: ClockConfig[] = [
-  { label: 'NYC', timeZone: 'America/New_York' },
-  { label: 'UTC', timeZone: 'UTC' },
-  { label: 'STO', timeZone: 'Europe/Stockholm' },
-  { label: 'TYO', timeZone: 'Asia/Tokyo' },
+const quickAccessTools = [
+  { url: '/catalog', label: 'Catalog', icon: <CategoryIcon /> },
+  { url: '/docs', label: 'Docs', icon: <LibraryBooksIcon /> },
+  { url: '/devtools', label: 'DevTools', icon: <BuildIcon /> },
 ];
 
 const customHomePageModule = createFrontendModule({
@@ -117,20 +117,22 @@ const customHomePageModule = createFrontendModule({
     HomePageLayoutBlueprint.make({
       params: {
         loader: async () =>
-          function CustomHomePageLayout({ widgets }: HomePageLayoutProps) {
+          function CustomHomePageLayout() {
             return (
               <Page themeId="home">
-                <Header title={<WelcomeTitle />} pageTitleOverride="Home">
-                  <HeaderWorldClock clockConfigs={clockConfigs} />
-                </Header>
+                <Header
+                  title={<WelcomeTitle />}
+                  pageTitleOverride="Home"
+                />
                 <Content>
-                  <CustomHomepageGrid>
-                    {widgets.map((widget, index) => (
-                      <Fragment key={widget.name ?? index}>
-                        {widget.component}
-                      </Fragment>
-                    ))}
-                  </CustomHomepageGrid>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={4}>
+                      <HomePageToolkit tools={quickAccessTools} />
+                    </Grid>
+                    <Grid item xs={12} md={8}>
+                      <HomePageStarredEntities />
+                    </Grid>
+                  </Grid>
                 </Content>
               </Page>
             );
@@ -164,18 +166,18 @@ const devtoolsPluginUnprocessed = createFrontendModule({
 
 const collectedLegacyPlugins = convertLegacyAppRoot(
   <FlatRoutes>
+    <Route path="/" element={<Navigate to="/home" replace />} />
     <Route path="/catalog-import" element={<CatalogImportPage />} />
+    <Route path="/api-testing" element={<ApiTestingPage />} />
   </FlatRoutes>,
 );
 
 const app = createApp({
   features: [
     customizedCatalog,
-    pagesPlugin,
     convertedTechdocsPlugin,
     userSettingsPlugin,
     homePlugin,
-    appVisualizerPlugin,
     kubernetesPlugin,
     notFoundErrorPageModule,
     appModuleNav,
@@ -183,6 +185,7 @@ const app = createApp({
     customHomePageModule,
     devtoolsPlugin,
     devtoolsPluginUnprocessed,
+    googleSignInModule,
     ...collectedLegacyPlugins,
   ],
   advanced: {

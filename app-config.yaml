@@ -84,6 +84,10 @@ proxy:
       target: 'http://localhost:8000'
       changeOrigin: true
       credentials: 'dangerously-allow-unauthenticated'
+    '/freddy-api':
+      target: 'http://localhost:8000'
+      changeOrigin: true
+      credentials: 'dangerously-allow-unauthenticated'
 
 organization:
   name: My Company
@@ -163,6 +167,8 @@ catalog:
         - System
         - Domain
         - Location
+        - Group
+        - User
   providers:
     azureBlob:
       accountName: ${ACCOUNT_NAME}
@@ -190,25 +196,9 @@ catalog:
     # File locations are relative to the current working directory of the
     # backend, for example packages/backend/.
 
-    # Backstage example entities
+    # Freddy Backend — auto-discovered from the test repository submodule
     - type: file
-      target: ../catalog-model/examples/all.yaml
-    # Backstage example groups and users
-    - type: file
-      target: ../catalog-model/examples/acme-corp.yaml
-      rules:
-        - allow: [User, Group]
-    # Example component for TechDocs
-    - type: file
-      target: ../../plugins/techdocs-backend/examples/documented-component/catalog-info.yaml
-    # Backstage example templates
-    - type: file
-      target: ../../plugins/scaffolder-backend/sample-templates/all-templates.yaml
-      rules:
-        - allow: [Template]
-    # Freddy Backend service + API entity
-    - type: file
-      target: ../../../freddy-portal/catalog-entities/freddy-backend.yaml
+      target: ../../test-repositories/Freddy.Backend.Tests/catalog-info.yaml
 
 scaffolder:
   auditor:
@@ -324,7 +314,6 @@ auth:
         clientSecret: ${AUTH_ATLASSIAN_CLIENT_SECRET}
         scope: ${AUTH_ATLASSIAN_SCOPES}
     myproxy: {}
-    guest: {}
 
 permission:
   enabled: true

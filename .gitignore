@@ -208,4 +208,4 @@ app-config.*.yaml
 compliance_reports/
 
 # API testing execution history
-api-tests/.history/
+.api-testing-history/

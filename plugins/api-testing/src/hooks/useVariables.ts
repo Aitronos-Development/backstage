@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApiTestingClient } from './useTestCases';
 import type {
@@ -33,9 +48,8 @@ function writeSelectedEnvironment(env: string): void {
 export function useVariables() {
   const client = useApiTestingClient();
   const [config, setConfig] = useState<ApiTestingConfig | null>(null);
-  const [localOverrides, setLocalOverrides] = useState<Record<string, string>>(
-    readLocalStorageVars,
-  );
+  const [localOverrides, setLocalOverrides] =
+    useState<Record<string, string>>(readLocalStorageVars);
   const [runtimeOverrides, setRuntimeOverrides] = useState<
     Record<string, string>
   >({});
@@ -53,8 +67,12 @@ export function useVariables() {
         if (!cancelled) {
           setConfig(cfg);
           // Set default environment if not yet selected
-          setSelectedEnvironmentState(prev =>
-            prev || cfg.defaultEnvironment || Object.keys(cfg.environments)[0] || '',
+          setSelectedEnvironmentState(
+            prev =>
+              prev ||
+              cfg.defaultEnvironment ||
+              Object.keys(cfg.environments)[0] ||
+              '',
           );
           setLoading(false);
         }
@@ -62,7 +80,9 @@ export function useVariables() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Environment selection
@@ -71,7 +91,8 @@ export function useVariables() {
     [config],
   );
 
-  const activeEnvironment = selectedEnvironment || config?.defaultEnvironment || '';
+  const activeEnvironment =
+    selectedEnvironment || config?.defaultEnvironment || '';
 
   const setSelectedEnvironment = useCallback((env: string) => {
     setSelectedEnvironmentState(env);
@@ -124,16 +145,13 @@ export function useVariables() {
   }, [configVariables, localOverrides, runtimeOverrides]);
 
   // localStorage CRUD
-  const setLocalOverride = useCallback(
-    (key: string, value: string) => {
-      setLocalOverrides(prev => {
-        const next = { ...prev, [key]: value };
-        writeLocalStorageVars(next);
-        return next;
-      });
-    },
-    [],
-  );
+  const setLocalOverride = useCallback((key: string, value: string) => {
+    setLocalOverrides(prev => {
+      const next = { ...prev, [key]: value };
+      writeLocalStorageVars(next);
+      return next;
+    });
+  }, []);
 
   const removeLocalOverride = useCallback((key: string) => {
     setLocalOverrides(prev => {
@@ -145,12 +163,9 @@ export function useVariables() {
   }, []);
 
   // Runtime override management
-  const setRuntimeOverride = useCallback(
-    (key: string, value: string) => {
-      setRuntimeOverrides(prev => ({ ...prev, [key]: value }));
-    },
-    [],
-  );
+  const setRuntimeOverride = useCallback((key: string, value: string) => {
+    setRuntimeOverrides(prev => ({ ...prev, [key]: value }));
+  }, []);
 
   const removeRuntimeOverride = useCallback((key: string) => {
     setRuntimeOverrides(prev => {

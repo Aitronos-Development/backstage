@@ -49,24 +49,17 @@ app:
         config:
           showNavItemIcons: true
           groups:
-            # placing a tab at the beginning
             - overview:
                 title: Overview
-            # example disabling a default group
-            # - development: false
-            # example overriding a default group title
+            - testing:
+                title: API Testing
             - documentation:
                 title: Docs
                 icon: docs
-            - deployment:
-                title: Deployments
-            # example adding a new group
-            - custom:
-                title: Custom
 
-    # Entity page cards — only Provided APIs, Consumed APIs, and Health
-    # Catalog cards
-    - entity-card:catalog/about: false
+    # Entity page cards
+    # Overview: About + Health + Provided APIs
+    - entity-card:catalog/about
     - entity-card:catalog/labels: false
     - entity-card:catalog/links: false
     - entity-card:catalog/depends-on-components: false
@@ -76,9 +69,8 @@ app:
     - entity-card:catalog/has-subcomponents: false
     - entity-card:catalog/has-subdomains: false
     - entity-card:catalog/has-systems: false
-    # Catalog graph
     - entity-card:catalog-graph/relations: false
-    # API docs — disable all defaults, use custom summary cards
+    # API docs — disable defaults, use custom summary cards on overview
     - entity-card:api-docs/has-apis: false
     - entity-card:api-docs/definition: false
     - entity-card:api-docs/consumed-apis: false
@@ -91,25 +83,20 @@ app:
     - entity-card:org/ownership: false
     - entity-card:org/user-profile: false
 
-    # Entity page contents
+    # Entity page contents (tabs)
     - entity-content:catalog/overview:
         config:
           group: overview
     - entity-content:api-docs/definition: false
     - entity-content:api-docs/apis: false
-    - entity-content:app/collapsible-apis: false
-    - entity-content:app/api-route-definition
+    - entity-content:app/api-route-definition:
+        config:
+          group: testing
     - entity-content:techdocs:
         config:
           group: documentation
           icon: techdocs
-    - entity-content:kubernetes/kubernetes:
-        config:
-          # example disassociating with a default group
-          group: false
-    # - entity-content:azure-devops/pipelines
-    # - entity-content:azure-devops/pull-requests
-    # - entity-content:azure-devops/git-tags
+    - entity-content:kubernetes/kubernetes: false
 
     # Enable the catalog-unprocessed-entities tab in devtools
     - devtools-content:catalog-unprocessed-entities: true

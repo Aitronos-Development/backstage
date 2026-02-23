@@ -1,11 +1,27 @@
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
+/*
+ * Copyright 2026 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import type { RouteGroupFile, TestCase } from './types';
 
 const API_TESTS_DIR = path.resolve(
+  // eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
   __dirname,
-  '../../../../api-tests',
+  '../../../../test-repositories/Freddy.Backend.Tests/test-suites',
 );
 
 // In-memory cache: route_group -> RouteGroupFile
@@ -27,9 +43,9 @@ function generateId(): string {
 
 function routeGroupToFilename(routeGroup: string): string {
   return (
-    routeGroup
+    `${routeGroup
       .replace(/^\//, '')
-      .replace(/\//g, '-') + '.json'
+      .replace(/\//g, '-')  }.json`
   );
 }
 
@@ -91,8 +107,8 @@ export function loadRouteGroup(routeGroup: string): RouteGroupFile {
 function saveRouteGroup(routeGroup: string, data: RouteGroupFile): void {
   ensureDir();
   const filePath = getFilePath(routeGroup);
-  const tmpPath = filePath + '.tmp';
-  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2) + '\n', 'utf-8');
+  const tmpPath = `${filePath  }.tmp`;
+  fs.writeFileSync(tmpPath, `${JSON.stringify(data, null, 2)  }\n`, 'utf-8');
   fs.renameSync(tmpPath, filePath);
   cache.set(routeGroup, data);
 }

@@ -4189,6 +4189,7 @@ __metadata:
   dependencies:
     "@backstage/cli": "workspace:^"
     "@modelcontextprotocol/sdk": "npm:^1.25.2"
+    js-yaml: "npm:^4.1.0"
     tsx: "npm:^4.21.0"
     zod: "npm:^3.25.76"
   languageName: unknown
@@ -10105,6 +10106,7 @@ __metadata:
     "@backstage/core-components": "workspace:^"
     "@backstage/core-plugin-api": "workspace:^"
     "@material-ui/core": "npm:^4.12.2"
+    "@material-ui/icons": "npm:^4.9.1"
     "@material-ui/lab": "npm:4.0.0-alpha.61"
     "@types/react": "npm:^18.0.0"
     react: "npm:^18.0.2"
@@ -31301,7 +31303,7 @@ __metadata:
     "@backstage/plugin-app-backend": "workspace:^"
     "@backstage/plugin-auth-backend": "workspace:^"
     "@backstage/plugin-auth-backend-module-github-provider": "workspace:^"
-    "@backstage/plugin-auth-backend-module-guest-provider": "workspace:^"
+    "@backstage/plugin-auth-backend-module-google-provider": "workspace:^"
     "@backstage/plugin-auth-backend-module-openshift-provider": "workspace:^"
     "@backstage/plugin-auth-node": "workspace:^"
     "@backstage/plugin-catalog-backend": "workspace:^"
@@ -32927,16 +32929,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"get-tsconfig@npm:^4.10.0, get-tsconfig@npm:^4.10.1":
-  version: 4.13.0
-  resolution: "get-tsconfig@npm:4.13.0"
-  dependencies:
-    resolve-pkg-maps: "npm:^1.0.0"
-  checksum: 10/3603c6da30e312636e4c20461e779114c9126601d1eca70ee4e36e3e3c00e3c21892d2d920027333afa2cc9e20998a436b14abe03a53cde40742581cb0e9ceb2
-  languageName: node
-  linkType: hard
-
-"get-tsconfig@npm:^4.7.5":
+"get-tsconfig@npm:^4.10.0, get-tsconfig@npm:^4.10.1, get-tsconfig@npm:^4.7.5":
   version: 4.13.6
   resolution: "get-tsconfig@npm:4.13.6"
   dependencies:

@@ -44,7 +44,7 @@ const searchLoader = createBackendFeatureLoader({
 
 backend.add(import('@backstage/plugin-auth-backend'));
 backend.add(import('./authModuleGithubProvider'));
-backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
+backend.add(import('./authModuleGoogleProvider'));
 backend.add(import('@backstage/plugin-auth-backend-module-openshift-provider'));
 backend.add(import('@backstage/plugin-app-backend'));
 backend.add(import('@backstage/plugin-catalog-backend-module-unprocessed'));
@@ -79,10 +79,12 @@ backend.add(import('@backstage/plugin-mcp-actions-backend'));
 backend.add(import('@internal/plugin-api-testing-backend'));
 
 // Start API Testing MCP server alongside the backend
+/* eslint-disable no-restricted-syntax -- dev-only example backend spawning MCP server */
 const mcpServerScript = path.resolve(
   __dirname,
-  '../../plugins/api-testing-mcp-server/src/index.ts',
+  '../../../plugins/api-testing-mcp-server/src/index.ts',
 );
+/* eslint-enable no-restricted-syntax */
 const mcpServer = spawn('npx', ['tsx', mcpServerScript], {
   stdio: ['pipe', 'pipe', 'inherit'],
 });

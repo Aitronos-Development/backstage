@@ -26,8 +26,12 @@ import {
   useSidebarOpenState,
 } from '@backstage/core-components';
 import SearchIcon from '@material-ui/icons/Search';
+import HomeIcon from '@material-ui/icons/Home';
 import MenuIcon from '@material-ui/icons/Menu';
 import BuildIcon from '@material-ui/icons/Build';
+import CategoryIcon from '@material-ui/icons/Category';
+import LibraryBooksIcon from '@material-ui/icons/LibraryBooks';
+import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
 import Brightness2Icon from '@material-ui/icons/Brightness2';
 import WbSunnyIcon from '@material-ui/icons/WbSunny';
 import { createFrontendModule } from '@backstage/frontend-plugin-api';
@@ -165,6 +169,8 @@ export const appModuleNav = createFrontendModule({
     NavContentBlueprint.make({
       params: {
         component: ({ navItems }) => {
+          // Consume all auto-registered nav items so nothing leaks
+          // into the sidebar unintentionally
           const nav = navItems.withComponent(item => (
             <SidebarItem
               icon={() => item.icon}
@@ -172,7 +178,7 @@ export const appModuleNav = createFrontendModule({
               text={item.title}
             />
           ));
-          nav.take('page:home'); // Skip home
+          nav.rest(); // consume all — sidebar is fully curated below
           return (
             <Sidebar>
               <SidebarLogo />
@@ -181,15 +187,22 @@ export const appModuleNav = createFrontendModule({
               </SidebarGroup>
               <SidebarDivider />
               <SidebarGroup label="Menu" icon={<MenuIcon />}>
-                {nav.take('page:catalog')}
-                {nav.take('page:scaffolder')}
-                <SidebarDivider />
-                <SidebarScrollWrapper>
-                  {nav.rest({ sortBy: 'title' })}
-                </SidebarScrollWrapper>
+                <SidebarItem icon={HomeIcon} to="/home" text="Home" />
+                <SidebarItem icon={CategoryIcon} to="catalog" text="Catalog" />
+                <SidebarItem
+                  icon={LibraryBooksIcon}
+                  to="docs"
+                  text="Docs"
+                />
+                <SidebarItem
+                  icon={PlaylistPlayIcon}
+                  to="api-testing"
+                  text="API Testing"
+                />
               </SidebarGroup>
               <SidebarDivider />
               <SidebarSpace />
+              <NotificationsSidebarItem />
               <SidebarThemeToggle />
               <SidebarDivider />
               <SidebarGroup
@@ -197,7 +210,6 @@ export const appModuleNav = createFrontendModule({
                 icon={<UserSettingsSignInAvatar />}
                 to="/settings"
               >
-                <NotificationsSidebarItem />
                 <SidebarItem icon={BuildIcon} to="devtools" text="DevTools" />
                 <Settings />
               </SidebarGroup>

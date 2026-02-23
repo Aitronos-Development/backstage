@@ -69,15 +69,17 @@ const consumedApisSummaryCard = EntityCardBlueprint.make({
 });
 
 /**
- * Custom Definition tab for API entities — shows collapsible parent routes
- * instead of Swagger UI.
+ * API Testing tab — shows route groups with test cases and execution controls.
+ * Fetches the OpenAPI spec directly from the live Freddy backend.
  */
 const apiRouteDefinitionContent = EntityContentBlueprint.make({
   name: 'api-route-definition',
   params: {
-    path: '/definition',
-    title: 'Definition',
-    filter: { kind: 'api' },
+    path: '/testing',
+    title: 'API Testing',
+    filter: entity =>
+      entity.kind === 'Component' &&
+      (entity.spec as any)?.type === 'service',
     loader: async () =>
       import('../components/ApiRouteDefinitionContent').then(m => (
         <m.ApiRouteDefinitionContent />

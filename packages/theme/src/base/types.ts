@@ -131,35 +131,41 @@ export type BackstageTypography = {
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h2: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h3: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h4: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h5: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h6: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
 };

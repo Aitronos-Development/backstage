@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import { useMemo, useState, useCallback, useRef } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useEntity } from '@backstage/plugin-catalog-react';
+import { useApi, configApiRef } from '@backstage/core-plugin-api';
 import Accordion from '@material-ui/core/Accordion';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
@@ -32,11 +33,10 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Button from '@material-ui/core/Button';
-import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   useTestCases,
+  useRouteGroups,
   useTestExecution,
   useWebSocket,
   useVariables,
@@ -47,99 +47,174 @@ import {
 } from '@internal/plugin-api-testing';
 import type { TestCase, TestStatus, ExecutionRecord } from '@internal/plugin-api-testing';
 
+const MONO_FONT =
+  '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", monospace';
+
 const useStyles = makeStyles(theme => ({
   root: {
-    padding: theme.spacing(2),
+    padding: theme.spacing(3),
   },
-  titleRow: {
+
+  /* ---- Header card ---- */
+  headerCard: {
     display: 'flex',
     alignItems: 'center',
-    marginBottom: theme.spacing(2),
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: theme.spacing(1),
+    gap: theme.spacing(2),
+    marginBottom: theme.spacing(3),
+    padding: theme.spacing(2, 2.5),
+    borderRadius: 12,
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(255,255,255,0.03)'
+        : 'rgba(0,0,0,0.015)',
+    border: `1px solid ${theme.palette.divider}`,
+  },
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(2),
   },
   title: {
-    fontWeight: 600,
-    fontSize: '1.1rem',
+    fontWeight: 700,
+    fontSize: '1.15rem',
+    letterSpacing: '-0.01em',
+  },
+  headerControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
   },
   variablesButton: {
-    marginLeft: theme.spacing(1),
+    textTransform: 'none',
+    fontWeight: 500,
+    borderRadius: 8,
+    fontSize: '0.82rem',
   },
+  countChip: {
+    fontWeight: 500,
+    fontSize: '0.7rem',
+    height: 22,
+    borderRadius: 6,
+  },
+
+  /* ---- Route group accordion ---- */
   routeAccordion: {
-    '&:before': {
-      display: 'none',
-    },
+    '&:before': { display: 'none' },
     boxShadow: 'none',
     border: `1px solid ${theme.palette.divider}`,
-    borderRadius: '4px !important',
-    marginBottom: theme.spacing(1),
+    borderRadius: '10px !important',
+    marginBottom: theme.spacing(1.5),
+    overflow: 'hidden',
+    transition: 'border-color 200ms',
+    '&.Mui-expanded': {
+      borderColor: theme.palette.primary.main,
+    },
   },
   routeSummary: {
-    fontWeight: 500,
-    fontFamily: 'monospace',
-    fontSize: '0.95rem',
+    '& .MuiAccordionSummary-content': {
+      alignItems: 'center',
+      gap: theme.spacing(1.5),
+      margin: `${theme.spacing(1)}px 0`,
+    },
   },
+  routePrefix: {
+    fontWeight: 600,
+    fontFamily: MONO_FONT,
+    fontSize: '0.9rem',
+    letterSpacing: '-0.01em',
+  },
+  statusIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: '50%',
+    display: 'inline-block',
+    flexShrink: 0,
+    transition: 'background-color 300ms',
+  },
+
+  /* ---- Endpoint row ---- */
   endpointRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing(1),
-    padding: theme.spacing(0.75, 0),
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    gap: theme.spacing(1.5),
+    padding: theme.spacing(1, 1.5),
+    borderRadius: 8,
+    marginBottom: 2,
+    transition: 'background-color 150ms',
   },
   endpointRowClickable: {
     cursor: 'pointer',
     '&:hover': {
-      backgroundColor: theme.palette.action.hover,
+      backgroundColor:
+        theme.palette.type === 'dark'
+          ? 'rgba(255,255,255,0.04)'
+          : 'rgba(0,0,0,0.025)',
     },
   },
   methodChip: {
     fontWeight: 700,
-    fontFamily: 'monospace',
-    fontSize: '0.75rem',
-    minWidth: 60,
+    fontFamily: MONO_FONT,
+    fontSize: '0.72rem',
+    minWidth: 64,
+    height: 24,
     justifyContent: 'center',
+    borderRadius: 6,
+    letterSpacing: '0.02em',
   },
   get: { backgroundColor: '#61affe', color: '#fff' },
   post: { backgroundColor: '#49cc90', color: '#fff' },
   put: { backgroundColor: '#fca130', color: '#fff' },
   delete: { backgroundColor: '#f93e3e', color: '#fff' },
   patch: { backgroundColor: '#50e3c2', color: '#fff' },
+  flow: { backgroundColor: '#9c27b0', color: '#fff' },
   default: { backgroundColor: theme.palette.grey[500], color: '#fff' },
   pathText: {
-    fontFamily: 'monospace',
-    fontSize: '0.9rem',
+    fontFamily: MONO_FONT,
+    fontSize: '0.85rem',
+    color: theme.palette.text.primary,
   },
   summary: {
     color: theme.palette.text.secondary,
-    fontSize: '0.85rem',
-    marginLeft: theme.spacing(1),
+    fontSize: '0.82rem',
     flex: 1,
-  },
-  emptyState: {
-    padding: theme.spacing(3),
-    textAlign: 'center',
-    color: theme.palette.text.secondary,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   badge: {
-    marginLeft: theme.spacing(1),
-    fontSize: '0.75rem',
+    fontWeight: 500,
+    fontSize: '0.7rem',
+    height: 22,
+    borderRadius: 6,
   },
   testCountBadge: {
-    marginLeft: 'auto',
-    fontSize: '0.7rem',
+    fontSize: '0.68rem',
+    height: 20,
+    borderRadius: 5,
+    fontWeight: 500,
   },
+
+  /* ---- Test cases container ---- */
   testCasesContainer: {
-    padding: theme.spacing(0.5, 0, 0.5, 2),
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    backgroundColor: theme.palette.background.default,
+    padding: theme.spacing(0.5, 0, 0.5, 3),
+    marginBottom: theme.spacing(0.5),
+    borderLeft: `2px solid ${
+      theme.palette.type === 'dark'
+        ? 'rgba(255,255,255,0.08)'
+        : theme.palette.grey[200]
+    }`,
+    marginLeft: theme.spacing(4),
     '& .MuiTableHead-root .MuiTableCell-head': {
       fontWeight: 600,
-      fontSize: '0.75rem',
+      fontSize: '0.72rem',
       textTransform: 'uppercase',
-      letterSpacing: '0.05em',
+      letterSpacing: '0.06em',
       color: theme.palette.text.secondary,
       paddingTop: theme.spacing(0.5),
       paddingBottom: theme.spacing(0.5),
+      borderBottom: `1px solid ${theme.palette.divider}`,
     },
   },
   statusDot: {
@@ -151,29 +226,51 @@ const useStyles = makeStyles(theme => ({
   },
   statusPass: {
     backgroundColor: theme.palette.type === 'dark' ? '#66bb6a' : '#4caf50',
+    boxShadow: `0 0 6px ${
+      theme.palette.type === 'dark'
+        ? 'rgba(102,187,106,0.4)'
+        : 'rgba(76,175,80,0.3)'
+    }`,
   },
   statusFail: {
     backgroundColor: theme.palette.error.main,
+    boxShadow: `0 0 6px ${
+      theme.palette.type === 'dark'
+        ? 'rgba(244,67,54,0.4)'
+        : 'rgba(244,67,54,0.3)'
+    }`,
   },
   statusRunning: {
     backgroundColor: theme.palette.info.main,
+    animation: '$pulse 1.5s ease-in-out infinite',
   },
   statusNeutral: {
     backgroundColor: theme.palette.grey[400],
   },
+  '@keyframes pulse': {
+    '0%, 100%': { opacity: 1 },
+    '50%': { opacity: 0.4 },
+  },
+
+  /* ---- Route group footer ---- */
   runAllButton: {
-    padding: theme.spacing(0.25),
+    textTransform: 'none',
+    fontWeight: 600,
+    fontSize: '0.78rem',
+    borderRadius: 8,
     color: theme.palette.success?.main || '#4caf50',
+    borderColor: theme.palette.success?.main || '#4caf50',
     '&:hover': {
       backgroundColor:
         theme.palette.type === 'dark'
-          ? 'rgba(76,175,80,0.15)'
-          : 'rgba(76,175,80,0.08)',
+          ? 'rgba(76,175,80,0.12)'
+          : 'rgba(76,175,80,0.06)',
+      borderColor: theme.palette.success?.main || '#4caf50',
     },
   },
   expandIcon: {
-    transition: 'transform 150ms',
-    fontSize: '1rem',
+    transition: 'transform 200ms ease',
+    fontSize: '1.1rem',
     color: theme.palette.text.secondary,
   },
   expandIconOpen: {
@@ -183,7 +280,61 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     alignItems: 'center',
     gap: theme.spacing(1),
-    padding: theme.spacing(1, 0, 0, 0),
+    marginTop: theme.spacing(1.5),
+    paddingTop: theme.spacing(1.5),
+    borderTop: `1px solid ${theme.palette.divider}`,
+  },
+  accordionDetails: {
+    display: 'block',
+    padding: theme.spacing(0, 2, 2, 2),
+  },
+
+  /* ---- Section headers ---- */
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+    paddingTop: theme.spacing(1.5),
+  },
+  sectionTitle: {
+    fontWeight: 600,
+    fontSize: '0.85rem',
+  },
+
+  /* ---- Unmatched / empty ---- */
+  unmatchedSection: {
+    marginTop: theme.spacing(2),
+    padding: theme.spacing(1.5, 2),
+    borderRadius: 8,
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(255,255,255,0.02)'
+        : 'rgba(0,0,0,0.015)',
+    border: `1px dashed ${theme.palette.divider}`,
+  },
+  unmatchedTitle: {
+    fontWeight: 600,
+    fontSize: '0.82rem',
+    color: theme.palette.text.secondary,
+    marginBottom: theme.spacing(1),
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing(8, 3),
+    textAlign: 'center',
+  },
+  emptyTitle: {
+    fontWeight: 600,
+    fontSize: '1rem',
+    marginBottom: theme.spacing(1),
+  },
+  emptySubtitle: {
+    color: theme.palette.text.secondary,
+    fontSize: '0.85rem',
   },
 }));
 
@@ -434,10 +585,12 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
       }
     }
 
-    // Collect unmatched test cases
-    const unmatched = testCases.filter(tc => !matched.has(tc.id));
+    // Separate unmatched into flow tests and other endpoint tests
+    const unmatchedAll = testCases.filter(tc => !matched.has(tc.id));
+    const flowTests = unmatchedAll.filter(tc => tc.method === 'FLOW');
+    const unmatched = unmatchedAll.filter(tc => tc.method !== 'FLOW');
 
-    return { map, unmatched };
+    return { map, unmatched, flowTests };
   }, [group.endpoints, testCases]);
 
   const methodColorClass = (method: string): string => {
@@ -470,19 +623,35 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
       className={classes.routeAccordion}
       TransitionProps={{ unmountOnExit: true }}
     >
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography className={classes.routeSummary}>{group.prefix}</Typography>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        className={classes.routeSummary}
+      >
+        <span className={`${classes.statusIndicator} ${statusDotClass}`} />
+        <Typography className={classes.routePrefix}>{group.prefix}</Typography>
         <Chip
           label={`${group.endpoints.length} endpoint${group.endpoints.length !== 1 ? 's' : ''}`}
           size="small"
-          className={classes.badge}
+          variant="outlined"
+          className={classes.countChip}
         />
-        <span
-          className={`${classes.statusDot} ${statusDotClass}`}
-          style={{ marginLeft: 8, alignSelf: 'center' }}
-        />
+        {testCases.length > 0 && (
+          <Chip
+            label={`${testCases.length} test${testCases.length !== 1 ? 's' : ''}`}
+            size="small"
+            variant="outlined"
+            className={classes.countChip}
+          />
+        )}
+        {testsByEndpoint.flowTests.length > 0 && (
+          <Chip
+            label={`${testsByEndpoint.flowTests.length} flow${testsByEndpoint.flowTests.length !== 1 ? 's' : ''}`}
+            size="small"
+            className={`${classes.countChip} ${classes.flow}`}
+          />
+        )}
       </AccordionSummary>
-      <AccordionDetails style={{ display: 'block', paddingTop: 0 }}>
+      <AccordionDetails className={classes.accordionDetails}>
         {loading && <LinearProgress />}
         {group.endpoints.map((ep, i) => {
           const key = `${ep.method}::${normalizePath(ep.path)}`;
@@ -499,13 +668,75 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
             />
           );
         })}
+        {testsByEndpoint.flowTests.length > 0 && (
+          <Box>
+            <Box className={classes.sectionHeader}>
+              <Chip
+                label="FLOW"
+                size="small"
+                className={`${classes.methodChip} ${classes.flow}`}
+              />
+              <Typography className={classes.sectionTitle}>
+                Flow Tests
+              </Typography>
+              <Chip
+                label={`${testsByEndpoint.flowTests.length} flow${testsByEndpoint.flowTests.length !== 1 ? 's' : ''}`}
+                size="small"
+                variant="outlined"
+                className={classes.countChip}
+              />
+            </Box>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Name</TableCell>
+                  <TableCell>File</TableCell>
+                  <TableCell>Result</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {testsByEndpoint.flowTests.map(tc => {
+                  const state = execution.getState(tc.id);
+                  const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
+                  const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
+                  return (
+                    <TestCaseRow
+                      key={tc.id}
+                      testCase={tc}
+                      routeGroup={group.prefix}
+                      status={state.status}
+                      result={state.result}
+                      error={state.error}
+                      onExecute={() =>
+                        execution.execute(
+                          tc.id,
+                          group.prefix,
+                          tcMerged,
+                          variablesCtx.activeEnvironment,
+                        )
+                      }
+                      onStop={() => execution.stop(tc.id)}
+                      runtimeOverrides={tcRuntime}
+                      onSetRuntimeOverride={(key, value) =>
+                        variablesCtx.setRuntimeOverride(tc.id, key, value)
+                      }
+                      onRemoveRuntimeOverride={key =>
+                        variablesCtx.removeRuntimeOverride(tc.id, key)
+                      }
+                      mergedVariables={variablesCtx.mergedVariables}
+                    />
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Box>
+        )}
         {testsByEndpoint.unmatched.length > 0 && (
-          <Box style={{ paddingTop: 8 }}>
-            <Typography
-              variant="body2"
-              style={{ fontWeight: 600, marginBottom: 4 }}
-            >
-              Other test cases
+          <Box className={classes.unmatchedSection}>
+            <Typography className={classes.unmatchedTitle}>
+              Other test cases ({testsByEndpoint.unmatched.length})
             </Typography>
             <Table size="small">
               <TableBody>
@@ -547,21 +778,182 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
         )}
         {testCases.length > 0 && (
           <Box className={classes.routeGroupFooter}>
-            <Tooltip title="Run all tests in this group">
-              <span>
-                <IconButton
-                  size="small"
-                  className={classes.runAllButton}
-                  onClick={handleRunAll}
-                  disabled={runningAll || loading}
-                >
-                  <PlayArrowIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Typography variant="caption" color="textSecondary">
+            <Button
+              variant="outlined"
+              size="small"
+              className={classes.runAllButton}
+              onClick={handleRunAll}
+              disabled={runningAll || loading}
+              startIcon={<PlayArrowIcon style={{ fontSize: 16 }} />}
+            >
               Run all {testCases.length} test{testCases.length !== 1 ? 's' : ''}
-            </Typography>
+            </Button>
+          </Box>
+        )}
+      </AccordionDetails>
+    </Accordion>
+  );
+}
+
+/** Route group that exists in test suites but not in the OpenAPI spec */
+function TestOnlyRouteGroupAccordion({
+  routeGroup,
+  refreshKey,
+  variablesCtx,
+}: {
+  routeGroup: string;
+  refreshKey: number;
+  variablesCtx: VariablesContext;
+}) {
+  const classes = useStyles();
+  const { testCases, loading, refresh } = useTestCases(routeGroup);
+  const execution = useTestExecution();
+  const [runningAll, setRunningAll] = useState(false);
+
+  const prevRefreshKeyRef = useRef(refreshKey);
+  if (prevRefreshKeyRef.current !== refreshKey) {
+    prevRefreshKeyRef.current = refreshKey;
+    refresh();
+  }
+
+  const flowTests = useMemo(() => testCases.filter(tc => tc.method === 'FLOW'), [testCases]);
+  const endpointTests = useMemo(() => testCases.filter(tc => tc.method !== 'FLOW'), [testCases]);
+
+  const overallStatus: OverallStatus = useMemo(() => {
+    if (loading) return 'neutral';
+    const statuses = testCases.map(tc => execution.getState(tc.id).status);
+    if (statuses.some(s => s === 'running') || runningAll) return 'running';
+    if (statuses.some(s => s === 'fail')) return 'fail';
+    if (statuses.length > 0 && statuses.every(s => s === 'pass')) return 'pass';
+    return 'neutral';
+  }, [testCases, execution, runningAll, loading]);
+
+  const statusDotClass = {
+    neutral: classes.statusNeutral,
+    pass: classes.statusPass,
+    fail: classes.statusFail,
+    running: classes.statusRunning,
+  }[overallStatus];
+
+  const handleRunAll = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setRunningAll(true);
+      for (const tc of testCases) {
+        const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
+        const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
+        await execution.execute(
+          tc.id,
+          routeGroup,
+          tcMerged,
+          variablesCtx.activeEnvironment,
+        );
+      }
+      setRunningAll(false);
+    },
+    [testCases, routeGroup, execution, variablesCtx],
+  );
+
+  if (!loading && testCases.length === 0) return null;
+
+  const renderTestTable = (tests: TestCase[], header?: string) => (
+    <Box style={{ paddingTop: header ? 8 : 0 }}>
+      {header && (
+        <Box className={classes.sectionHeader}>
+          {header === 'Flow Tests' && (
+            <Chip
+              label="FLOW"
+              size="small"
+              className={`${classes.methodChip} ${classes.flow}`}
+            />
+          )}
+          <Typography className={classes.sectionTitle}>{header}</Typography>
+        </Box>
+      )}
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Type</TableCell>
+            <TableCell>Name</TableCell>
+            <TableCell>{header === 'Flow Tests' ? 'File' : 'Path'}</TableCell>
+            <TableCell>Result</TableCell>
+            <TableCell align="right">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {tests.map(tc => {
+            const state = execution.getState(tc.id);
+            const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
+            const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
+            return (
+              <TestCaseRow
+                key={tc.id}
+                testCase={tc}
+                routeGroup={routeGroup}
+                status={state.status}
+                result={state.result}
+                error={state.error}
+                onExecute={() =>
+                  execution.execute(tc.id, routeGroup, tcMerged, variablesCtx.activeEnvironment)
+                }
+                onStop={() => execution.stop(tc.id)}
+                runtimeOverrides={tcRuntime}
+                onSetRuntimeOverride={(key, value) =>
+                  variablesCtx.setRuntimeOverride(tc.id, key, value)
+                }
+                onRemoveRuntimeOverride={key =>
+                  variablesCtx.removeRuntimeOverride(tc.id, key)
+                }
+                mergedVariables={variablesCtx.mergedVariables}
+              />
+            );
+          })}
+        </TableBody>
+      </Table>
+    </Box>
+  );
+
+  return (
+    <Accordion
+      className={classes.routeAccordion}
+      TransitionProps={{ unmountOnExit: true }}
+    >
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        className={classes.routeSummary}
+      >
+        <span className={`${classes.statusIndicator} ${statusDotClass}`} />
+        <Typography className={classes.routePrefix}>{routeGroup}</Typography>
+        <Chip
+          label={`${testCases.length} test${testCases.length !== 1 ? 's' : ''}`}
+          size="small"
+          variant="outlined"
+          className={classes.countChip}
+        />
+        {flowTests.length > 0 && (
+          <Chip
+            label={`${flowTests.length} flow${flowTests.length !== 1 ? 's' : ''}`}
+            size="small"
+            className={`${classes.countChip} ${classes.flow}`}
+          />
+        )}
+      </AccordionSummary>
+      <AccordionDetails className={classes.accordionDetails}>
+        {loading && <LinearProgress />}
+        {flowTests.length > 0 && renderTestTable(flowTests, 'Flow Tests')}
+        {endpointTests.length > 0 && renderTestTable(endpointTests, flowTests.length > 0 ? 'Endpoint Tests' : undefined)}
+        {testCases.length > 0 && (
+          <Box className={classes.routeGroupFooter}>
+            <Button
+              variant="outlined"
+              size="small"
+              className={classes.runAllButton}
+              onClick={handleRunAll}
+              disabled={runningAll || loading}
+              startIcon={<PlayArrowIcon style={{ fontSize: 16 }} />}
+            >
+              Run all {testCases.length} test{testCases.length !== 1 ? 's' : ''}
+            </Button>
           </Box>
         )}
       </AccordionDetails>
@@ -571,13 +963,39 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
 
 export function ApiRouteDefinitionContent() {
   const { entity } = useEntity();
-  const definition = (entity.spec as any)?.definition;
+  const config = useApi(configApiRef);
+  const backendUrl = config.getString('backend.baseUrl');
   const variables = useVariables();
+
+  // Fetch the OpenAPI spec: from entity definition (API entities) or
+  // from the live Freddy backend via proxy (Component entities).
+  const entityDefinition = entity.kind === 'API'
+    ? (entity.spec as any)?.definition
+    : undefined;
+
+  const [fetchedDefinition, setFetchedDefinition] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (entityDefinition) return; // Already have it from the entity
+    fetch(`${backendUrl}/api/proxy/freddy-api/openapi.json`)
+      .then(res => res.ok ? res.text() : Promise.reject(new Error(`${res.status}`)))
+      .then(text => setFetchedDefinition(text))
+      .catch(() => setFetchedDefinition(null));
+  }, [entityDefinition, backendUrl]);
+
+  const definition = entityDefinition ?? fetchedDefinition;
 
   const routeGroups = useMemo(() => {
     if (typeof definition !== 'string') return [];
     return parseOpenApiRoutes(definition);
   }, [definition]);
+
+  // Fetch test suite route groups from backend to discover groups not in OpenAPI
+  const { routeGroups: testSuiteGroups } = useRouteGroups();
+  const testOnlyGroups = useMemo(() => {
+    const openApiPrefixes = new Set(routeGroups.map(g => g.prefix));
+    return testSuiteGroups.filter(g => !openApiPrefixes.has(g));
+  }, [routeGroups, testSuiteGroups]);
 
   const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
 
@@ -676,22 +1094,38 @@ export function ApiRouteDefinitionContent() {
 
   const classes = useStyles();
 
-  if (!definition) {
+  const totalGroups = routeGroups.length + testOnlyGroups.length;
+  const totalEndpoints = routeGroups.reduce(
+    (sum, g) => sum + g.endpoints.length,
+    0,
+  );
+
+  if (!definition && testOnlyGroups.length === 0) {
     return (
       <Box className={classes.root}>
-        <Typography className={classes.emptyState}>
-          No API definition found
-        </Typography>
+        <Box className={classes.emptyState}>
+          <Typography className={classes.emptyTitle}>
+            No API definition found
+          </Typography>
+          <Typography className={classes.emptySubtitle}>
+            Attach an OpenAPI spec to this entity to see API routes and run tests.
+          </Typography>
+        </Box>
       </Box>
     );
   }
 
-  if (routeGroups.length === 0) {
+  if (routeGroups.length === 0 && testOnlyGroups.length === 0) {
     return (
       <Box className={classes.root}>
-        <Typography className={classes.emptyState}>
-          No routes found in the API definition
-        </Typography>
+        <Box className={classes.emptyState}>
+          <Typography className={classes.emptyTitle}>
+            No routes found
+          </Typography>
+          <Typography className={classes.emptySubtitle}>
+            The API definition was loaded but contains no path definitions.
+          </Typography>
+        </Box>
       </Box>
     );
   }
@@ -699,16 +1133,26 @@ export function ApiRouteDefinitionContent() {
   return (
     <ExecutionHistoryContext.Provider value={historyCtxValue}>
       <Box className={classes.root}>
-        <Box className={classes.titleRow}>
-          <Typography className={classes.title}>
-            API Routes
+        {/* Header card */}
+        <Box className={classes.headerCard}>
+          <Box className={classes.headerLeft}>
+            <Typography className={classes.title}>API Testing</Typography>
             <Chip
-              label={`${routeGroups.length} route group${routeGroups.length !== 1 ? 's' : ''}`}
+              label={`${totalGroups} group${totalGroups !== 1 ? 's' : ''}`}
               size="small"
-              className={classes.badge}
+              variant="outlined"
+              className={classes.countChip}
             />
-          </Typography>
-          <Box style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+            {totalEndpoints > 0 && (
+              <Chip
+                label={`${totalEndpoints} endpoint${totalEndpoints !== 1 ? 's' : ''}`}
+                size="small"
+                variant="outlined"
+                className={classes.countChip}
+              />
+            )}
+          </Box>
+          <Box className={classes.headerControls}>
             <EnvironmentSwitcher
               environments={variables.environments}
               activeEnvironment={variables.activeEnvironment}
@@ -737,6 +1181,14 @@ export function ApiRouteDefinitionContent() {
             key={group.prefix}
             group={group}
             refreshKey={refreshKeys[group.prefix] ?? 0}
+            variablesCtx={variablesCtx}
+          />
+        ))}
+        {testOnlyGroups.map(group => (
+          <TestOnlyRouteGroupAccordion
+            key={group}
+            routeGroup={group}
+            refreshKey={refreshKeys[group] ?? 0}
             variablesCtx={variablesCtx}
           />
         ))}

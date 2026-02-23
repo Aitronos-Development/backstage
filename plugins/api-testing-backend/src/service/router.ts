@@ -1,8 +1,25 @@
+/*
+ * Copyright 2026 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import express from 'express';
 import Router from 'express-promise-router';
-import fs from 'fs';
-import http from 'http';
-import { Duplex } from 'stream';
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+import { Duplex } from 'node:stream';
 import { InputError, NotFoundError } from '@backstage/errors';
 import {
   LoggerService,
@@ -143,7 +160,7 @@ export async function createRouter(
   try {
     fs.watch(apiTestsDir, (_, filename) => {
       if (filename && filename.endsWith('.json') && !filename.endsWith('.tmp')) {
-        const routeGroup = '/' + filename.replace(/\.json$/, '').replace(/-/g, '/');
+        const routeGroup = `/${  filename.replace(/\.json$/, '').replace(/-/g, '/')}`;
         invalidateCache(routeGroup);
         broadcast({ type: 'test-cases-changed', routeGroup });
       }
@@ -225,7 +242,7 @@ export async function createRouter(
     const routeGroups: string[] = [];
 
     for (const file of files) {
-      const routeGroup = '/' + file.replace(/\.json$/, '').replace(/-/g, '/');
+      const routeGroup = `/${  file.replace(/\.json$/, '').replace(/-/g, '/')}`;
       routeGroups.push(routeGroup);
     }
 
@@ -234,7 +251,7 @@ export async function createRouter(
 
   // --- Get single test case (must be registered before the wildcard list route) ---
   router.get('/test-cases/:routeGroup(*)/:id', async (req, res) => {
-    const routeGroup = '/' + req.params.routeGroup;
+    const routeGroup = `/${  req.params.routeGroup}`;
     const testCase = await readTestCase(routeGroup, req.params.id);
     if (!testCase) {
       throw new NotFoundError(
@@ -246,7 +263,7 @@ export async function createRouter(
 
   // --- List test cases for a route group ---
   router.get('/test-cases/:routeGroup(*)', async (req, res) => {
-    const routeGroup = '/' + req.params.routeGroup;
+    const routeGroup = `/${  req.params.routeGroup}`;
     const testCases = await listTestCases(routeGroup);
     res.json(testCases);
   });
@@ -281,7 +298,9 @@ export async function createRouter(
     runningExecutions.set(executionId, controller);
 
     try {
-      const result = await executeTestCase(testCase, mergedVariables, controller.signal);
+      const result = testCase.method === 'FLOW'
+        ? await executeFlowTest(testCase, controller.signal)
+        : await executeTestCase(testCase, mergedVariables, controller.signal);
 
       // Write history record
       const record = buildExecutionRecord({
@@ -341,7 +360,9 @@ export async function createRouter(
     for (const tc of testCases) {
       const controller = new AbortController();
       try {
-        const result = await executeTestCase(tc, mergedVariables, controller.signal);
+        const result = tc.method === 'FLOW'
+          ? await executeFlowTest(tc, controller.signal)
+          : await executeTestCase(tc, mergedVariables, controller.signal);
 
         // Write history record
         const record = buildExecutionRecord({
@@ -401,7 +422,7 @@ export async function createRouter(
 
   // --- History: per-endpoint ---
   router.get('/history/:routeGroup(*)/:testCaseId', async (req, res) => {
-    const routeGroup = '/' + req.params.routeGroup;
+    const routeGroup = `/${  req.params.routeGroup}`;
     const { testCaseId } = req.params;
     const initiator = req.query.initiator as 'user' | 'agent' | undefined;
     const result = req.query.result as 'pass' | 'fail' | undefined;
@@ -419,7 +440,7 @@ export async function createRouter(
 
   // --- History: route group overview ---
   router.get('/history/:routeGroup(*)', async (req, res) => {
-    const routeGroup = '/' + req.params.routeGroup;
+    const routeGroup = `/${  req.params.routeGroup}`;
     const initiator = req.query.initiator as 'user' | 'agent' | undefined;
     const result = req.query.result as 'pass' | 'fail' | undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
@@ -435,6 +456,80 @@ export async function createRouter(
   });
 
   return router;
+}
+
+// eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
+const FLOW_TESTS_DIR = path.resolve(__dirname, '../../../../test-repositories/Freddy.Backend.Tests');
+
+async function executeFlowTest(
+  testCase: TestCase,
+  signal: AbortSignal,
+): Promise<ExecutionResult> {
+  const pytestNodeId = testCase.path;
+
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const proc = spawn(
+      'uv',
+      ['run', 'pytest', pytestNodeId, '-v', '--tb=short', '--no-header'],
+      { cwd: FLOW_TESTS_DIR, env: { ...process.env } },
+    );
+
+    let stdout = '';
+    let stderr = '';
+
+    const onAbort = () => proc.kill();
+    signal.addEventListener('abort', onAbort);
+
+    proc.stdout.on('data', (d: Buffer) => {
+      stdout += d.toString();
+    });
+    proc.stderr.on('data', (d: Buffer) => {
+      stderr += d.toString();
+    });
+
+    proc.on('close', code => {
+      signal.removeEventListener('abort', onAbort);
+      const responseTime = Date.now() - start;
+      const pass = code === 0;
+      const output = `${stdout}\n${stderr}`.trim();
+
+      // Extract failure lines from pytest output
+      const failureLines = output
+        .split('\n')
+        .filter(
+          l =>
+            l.includes('FAILED') ||
+            l.includes('AssertionError') ||
+            l.includes('assert '),
+        );
+      const failureReason = pass
+        ? null
+        : failureLines.length > 0
+          ? failureLines.join('; ')
+          : output.slice(-500);
+
+      resolve({
+        pass,
+        statusCode: pass ? 200 : 500,
+        expectedStatusCode: 200,
+        responseTime,
+        details: { responseBody: output },
+        _request: { method: 'FLOW', url: pytestNodeId, headers: {} },
+        _response: {
+          status_code: code ?? 1,
+          headers: {},
+          body: output,
+        },
+        _failureReason: failureReason,
+      });
+    });
+
+    proc.on('error', err => {
+      signal.removeEventListener('abort', onAbort);
+      reject(err);
+    });
+  });
 }
 
 async function executeTestCase(

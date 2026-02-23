@@ -3,7 +3,7 @@
     "api-testing": {
       "command": "npx",
       "args": ["tsx", "plugins/api-testing-mcp-server/src/index.ts"],
-      "cwd": "/Users/rahul/Documents/github/backstage"
+      "cwd": "/Users/philliploacker/Documents/GitHub/backstage"
     }
   }
 }

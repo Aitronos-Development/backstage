@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 const MAX_RESOLUTION_DEPTH = 5;
 const VARIABLE_PATTERN = /\{\{(\w+)\}\}/g;
 
@@ -29,7 +44,7 @@ function resolveString(
 
   for (let depth = 0; depth < MAX_RESOLUTION_DEPTH; depth++) {
     const previous = result;
-    result = result.replace(VARIABLE_PATTERN, (match, key) => {
+    result = result.replace(VARIABLE_PATTERN, (_match, key) => {
       if (key in variables) return variables[key];
       throw new Error(`Variable '{{${key}}}' not found in any layer`);
     });
@@ -97,9 +112,10 @@ export function extractVariablePlaceholders(testCase: {
   function scan(value: unknown): void {
     if (typeof value === 'string') {
       VARIABLE_PATTERN.lastIndex = 0;
-      let match;
-      while ((match = VARIABLE_PATTERN.exec(value)) !== null) {
+      let match = VARIABLE_PATTERN.exec(value);
+      while (match !== null) {
         found.add(match[1]);
+        match = VARIABLE_PATTERN.exec(value);
       }
     } else if (typeof value === 'object' && value !== null) {
       for (const v of Object.values(value)) {

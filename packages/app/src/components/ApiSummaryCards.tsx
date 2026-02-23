@@ -116,7 +116,7 @@ function ApiListCard({
               namespace: api.metadata.namespace || 'default',
               name: api.metadata.name,
             });
-            const href = `${baseHref}/definition`;
+            const href = `${baseHref}/testing`;
             return (
               <ListItem
                 key={api.metadata.name}

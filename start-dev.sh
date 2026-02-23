@@ -330,28 +330,38 @@ check_node() {
 
         # Try nvm auto-fix
         if [ -f "$HOME/.nvm/nvm.sh" ]; then
-            if ask_yes_no "Switch to Node.js 22 using nvm?"; then
-                # shellcheck source=/dev/null
-                source "$HOME/.nvm/nvm.sh"
-                if nvm ls 22 &>/dev/null; then
-                    nvm use 22
-                else
-                    nvm install 22
-                    nvm use 22
-                fi
+            # shellcheck source=/dev/null
+            source "$HOME/.nvm/nvm.sh"
+            if nvm ls 22 &>/dev/null; then
+                # Node 22 already installed, just switch without asking
+                info "Switching to Node.js 22 (already installed)..."
+                nvm use 22
                 success "Switched to Node.js $(node --version) via nvm"
                 return 0
+            else
+                # Need to install, ask for confirmation
+                if ask_yes_no "Install and switch to Node.js 22 using nvm?"; then
+                    nvm install 22
+                    nvm use 22
+                    success "Switched to Node.js $(node --version) via nvm"
+                    return 0
+                fi
             fi
         elif command -v nvm &> /dev/null; then
-            if ask_yes_no "Switch to Node.js 22 using nvm?"; then
-                if nvm ls 22 &>/dev/null; then
-                    nvm use 22
-                else
-                    nvm install 22
-                    nvm use 22
-                fi
+            if nvm ls 22 &>/dev/null; then
+                # Node 22 already installed, just switch without asking
+                info "Switching to Node.js 22 (already installed)..."
+                nvm use 22
                 success "Switched to Node.js $(node --version) via nvm"
                 return 0
+            else
+                # Need to install, ask for confirmation
+                if ask_yes_no "Install and switch to Node.js 22 using nvm?"; then
+                    nvm install 22
+                    nvm use 22
+                    success "Switched to Node.js $(node --version) via nvm"
+                    return 0
+                fi
             fi
         elif has_brew; then
             if ask_yes_no "Install Node.js 22 via Homebrew?"; then
@@ -710,59 +720,227 @@ show_status() {
     local fe_port="${2:-$DEFAULT_FRONTEND_PORT}"
     local current_env
     current_env=$(get_current_env)
+    local config_file="$PROJECT_ROOT/app-config.yaml"
+    local be_base="http://localhost:$be_port"
+    local fe_base="http://localhost:$fe_port"
+    local be_healthy=0
 
     banner "Backstage Dev Status"
 
-    # Environment
+    # ── General ──────────────────────────────────────────────────────────
     echo -e "  ${BOLD}Environment:${NC}  $current_env"
-
-    # Separate mode
+    echo -e "  ${BOLD}Git Branch:${NC}   $(git -C "$PROJECT_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
     if [[ "$SEPARATE_MODE" -eq 1 ]]; then
-        echo -e "  ${BOLD}Branch:${NC}       $SAFE_BRANCH (isolated)"
+        echo -e "  ${BOLD}Isolation:${NC}    ${CYAN}$SAFE_BRANCH${NC} (branch-isolated)"
     fi
-
-    # Freeze status
     if [[ -f "$RELOAD_FREEZE_FILE" ]]; then
         echo -e "  ${BOLD}Hot Reload:${NC}   ${RED}FROZEN${NC}"
     else
         echo -e "  ${BOLD}Hot Reload:${NC}   ${GREEN}Active${NC}"
     fi
+
+    # ── Services ─────────────────────────────────────────────────────────
     echo ""
+    echo -e "  ${BOLD}${CYAN}SERVICES${NC}"
+    echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
 
     # Backend health
-    echo -e "  ${BOLD}Backend (port $be_port):${NC}"
-    if curl -sf "http://localhost:$be_port$HEALTH_ENDPOINT" > /dev/null 2>&1; then
-        echo -e "    Health:    ${GREEN}Healthy${NC}"
+    local health_body
+    health_body=$(curl -sf "$be_base$HEALTH_ENDPOINT" 2>/dev/null)
+    if [[ $? -eq 0 ]]; then
+        be_healthy=1
+        echo -e "  Backend:     ${GREEN}Healthy${NC}  (port $be_port)"
     else
         local be_listener
         be_listener=$(lsof -ti:"$be_port" -sTCP:LISTEN 2>/dev/null)
         if [[ -n "$be_listener" ]]; then
-            echo -e "    Health:    ${YELLOW}Starting (process on port, not yet responding)${NC}"
+            echo -e "  Backend:     ${YELLOW}Starting${NC}  (port $be_port, not yet responding)"
         else
-            echo -e "    Health:    ${RED}Not running${NC}"
+            echo -e "  Backend:     ${RED}Not running${NC}  (port $be_port)"
         fi
     fi
 
     # Frontend status
-    echo -e "  ${BOLD}Frontend (port $fe_port):${NC}"
     local fe_status
-    fe_status=$(curl -sf -o /dev/null -w "%{http_code}" "http://localhost:$fe_port" 2>/dev/null)
+    fe_status=$(curl -sf -o /dev/null -w "%{http_code}" "$fe_base" 2>/dev/null)
     if [[ "$fe_status" == "200" || "$fe_status" == "304" ]]; then
-        echo -e "    Status:    ${GREEN}Running (HTTP $fe_status)${NC}"
+        echo -e "  Frontend:    ${GREEN}Running${NC}  (port $fe_port, HTTP $fe_status)"
     else
         local fe_listener
         fe_listener=$(lsof -ti:"$fe_port" -sTCP:LISTEN 2>/dev/null)
         if [[ -n "$fe_listener" ]]; then
-            echo -e "    Status:    ${YELLOW}Starting (process on port, not yet responding)${NC}"
+            echo -e "  Frontend:    ${YELLOW}Starting${NC}  (port $fe_port, not yet responding)"
         else
-            echo -e "    Status:    ${RED}Not running${NC}"
+            echo -e "  Frontend:    ${RED}Not running${NC}  (port $fe_port)"
         fi
     fi
 
-    # Docker containers (if docker env)
+    # ── URLs ─────────────────────────────────────────────────────────────
+    echo ""
+    echo -e "  ${BOLD}${CYAN}URLS${NC}"
+    echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
+    echo -e "  Frontend:          ${BOLD}$fe_base${NC}"
+    echo -e "  Backend:           ${BOLD}$be_base${NC}"
+    echo -e "  Health (ready):    $be_base/.backstage/health/v1/readiness"
+    echo -e "  Health (live):     $be_base/.backstage/health/v1/liveness"
+    echo -e "  DevTools Health:   $be_base/api/devtools/health"
+    echo -e "  DevTools Info:     $be_base/api/devtools/info"
+    echo -e "  DevTools Config:   $be_base/api/devtools/config"
+    echo -e "  Catalog API:       $be_base/api/catalog"
+    echo -e "  Auth API:          $be_base/api/auth"
+    echo -e "  Scaffolder API:    $be_base/api/scaffolder"
+    echo -e "  Search API:        $be_base/api/search"
+    echo -e "  TechDocs API:      $be_base/api/techdocs"
+    echo -e "  Events API:        $be_base/api/events"
+    echo -e "  Signals API:       $be_base/api/signals"
+    echo -e "  Notifications API: $be_base/api/notifications"
+    echo -e "  Permissions API:   $be_base/api/permission"
+    echo -e "  Kubernetes API:    $be_base/api/kubernetes"
+    echo -e "  API Testing API:   $be_base/api/api-testing"
+
+    # ── Plugins ──────────────────────────────────────────────────────────
+    echo ""
+    echo -e "  ${BOLD}${CYAN}PLUGINS${NC}"
+    echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
+    if [[ $be_healthy -eq 1 ]]; then
+        # Try to extract plugin list from recent logs
+        local plugins_line
+        plugins_line=$(grep -m1 "Plugin initialization complete" "$LOG_DIR/backend/latest.log" 2>/dev/null \
+            || grep -m1 "Plugin initialization in progress" "$LOG_DIR/backend/latest.log" 2>/dev/null)
+        if [[ -n "$plugins_line" ]]; then
+            # Extract the list of plugins from the log line
+            local plugin_list
+            plugin_list=$(echo "$plugins_line" | grep -oP "(?:newly initialized|still initializing): '[^']+(?:', '[^']+')*" \
+                | sed "s/newly initialized: //;s/still initializing: //;s/'//g" | tr ',' '\n' | sort -u | tr '\n' ', ' | sed 's/, $//')
+            if [[ -n "$plugin_list" ]]; then
+                echo -e "  ${GREEN}Loaded:${NC} $plugin_list"
+            else
+                echo -e "  ${GRAY}Could not parse plugin list from logs${NC}"
+            fi
+        else
+            echo -e "  api-testing, app, auth, catalog, devtools, events,"
+            echo -e "  kubernetes, mcp-actions, notifications, permission,"
+            echo -e "  proxy, scaffolder, search, signals, techdocs"
+        fi
+    else
+        echo -e "  ${GRAY}Backend not running — cannot determine loaded plugins${NC}"
+    fi
+
+    # ── Proxy Endpoints ──────────────────────────────────────────────────
+    echo ""
+    echo -e "  ${BOLD}${CYAN}PROXY ENDPOINTS${NC}"
+    echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
+    if [[ -f "$config_file" ]]; then
+        local in_proxy=0
+        local in_endpoints=0
+        local current_name=""
+        while IFS= read -r line; do
+            # Detect proxy: section
+            if [[ "$line" =~ ^proxy: ]]; then
+                in_proxy=1; continue
+            fi
+            # Exit proxy section on next top-level key
+            if [[ $in_proxy -eq 1 && "$line" =~ ^[a-zA-Z] && ! "$line" =~ ^proxy ]]; then
+                in_proxy=0; in_endpoints=0; break
+            fi
+            if [[ $in_proxy -eq 1 && "$line" =~ ^[[:space:]]+endpoints: ]]; then
+                in_endpoints=1; continue
+            fi
+            if [[ $in_endpoints -eq 1 ]]; then
+                # Match proxy name like "    '/pagerduty':"
+                if [[ "$line" =~ ^[[:space:]]+[\'\"]?(/[a-zA-Z0-9_-]+)[\'\"]?: ]]; then
+                    current_name="${BASH_REMATCH[1]}"
+                fi
+                # Match target line
+                if [[ "$line" =~ target:[[:space:]]+[\'\"]?([^\'\"[:space:]]+) && -n "$current_name" ]]; then
+                    local target="${BASH_REMATCH[1]}"
+                    printf "  %-18s → %s\n" "$current_name" "$target"
+                    echo -e "  ${GRAY}  Access via: $be_base/api/proxy${current_name}${NC}"
+                    current_name=""
+                fi
+            fi
+        done < "$config_file"
+    else
+        echo -e "  ${GRAY}Config file not found${NC}"
+    fi
+
+    # ── Database ─────────────────────────────────────────────────────────
+    echo ""
+    echo -e "  ${BOLD}${CYAN}DATABASE${NC}"
+    echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
+    if [[ -f "$config_file" ]]; then
+        local db_client db_host db_port db_user
+        db_client=$(grep -A1 'database:' "$config_file" | grep 'client:' | head -1 | awk '{print $2}')
+        db_host=$(grep -A10 'database:' "$config_file" | grep 'host:' | head -1 | awk '{print $2}')
+        db_port=$(grep -A10 'database:' "$config_file" | grep 'port:' | head -1 | awk '{print $2}')
+        db_user=$(grep -A10 'database:' "$config_file" | grep 'user:' | head -1 | awk '{print $2}')
+        echo -e "  Client:   ${BOLD}${db_client:-unknown}${NC}"
+        echo -e "  Host:     ${db_host:-unknown}:${db_port:-?}"
+        echo -e "  User:     ${db_user:-unknown}"
+
+        # Check DB connectivity
+        if command -v pg_isready &>/dev/null && [[ "$db_client" == "pg" ]]; then
+            if pg_isready -h "${db_host:-localhost}" -p "${db_port:-5432}" -U "${db_user:-postgres}" -q 2>/dev/null; then
+                echo -e "  Status:   ${GREEN}Reachable${NC}"
+            else
+                echo -e "  Status:   ${RED}Unreachable${NC}"
+            fi
+        fi
+    else
+        echo -e "  ${GRAY}Config file not found${NC}"
+    fi
+
+    # ── API Testing ──────────────────────────────────────────────────────
+    echo ""
+    echo -e "  ${BOLD}${CYAN}API TESTING${NC}"
+    echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
+    if [[ -f "$config_file" ]]; then
+        local api_env api_base
+        api_env=$(grep -A1 'apiTesting:' "$config_file" | grep 'defaultEnvironment:' | awk '{print $2}')
+        if [[ -n "$api_env" ]]; then
+            echo -e "  Environment: ${BOLD}$api_env${NC}"
+            # Extract baseUrl for the active environment
+            api_base=$(awk "/apiTesting:/,/^[a-zA-Z]/" "$config_file" \
+                | awk "/$api_env:/,/^[[:space:]]{4}[a-zA-Z]/" \
+                | grep 'baseUrl:' | head -1 | awk '{print $2}')
+            if [[ -n "$api_base" ]]; then
+                echo -e "  Base URL:    $api_base"
+                # Check if the service under test is reachable
+                local sut_status
+                sut_status=$(curl -sf -o /dev/null -w "%{http_code}" "$api_base" 2>/dev/null)
+                if [[ "$sut_status" =~ ^[23] ]]; then
+                    echo -e "  Status:      ${GREEN}Reachable${NC} (HTTP $sut_status)"
+                else
+                    echo -e "  Status:      ${RED}Unreachable${NC}"
+                fi
+            fi
+        else
+            echo -e "  ${GRAY}Not configured${NC}"
+        fi
+    fi
+
+    # ── Auth Providers ───────────────────────────────────────────────────
+    echo ""
+    echo -e "  ${BOLD}${CYAN}AUTH PROVIDERS${NC}"
+    echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
+    if [[ -f "$config_file" ]]; then
+        local providers
+        providers=$(awk '/^  providers:/,/^[a-zA-Z]/' "$config_file" \
+            | grep -E '^    [a-zA-Z]' | awk -F: '{print $1}' | sed 's/^[[:space:]]*//' | sort)
+        if [[ -n "$providers" ]]; then
+            local provider_list
+            provider_list=$(echo "$providers" | tr '\n' ', ' | sed 's/, $//')
+            echo -e "  Configured: $provider_list"
+        else
+            echo -e "  ${GRAY}None configured${NC}"
+        fi
+    fi
+
+    # ── Docker Services ──────────────────────────────────────────────────
     if [[ "$current_env" == "docker" || "$SEPARATE_MODE" -eq 1 ]]; then
         echo ""
-        echo -e "  ${BOLD}Docker Services:${NC}"
+        echo -e "  ${BOLD}${CYAN}DOCKER SERVICES${NC}"
+        echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
         local compose_file="$DOCKER_COMPOSE_FILE"
         if [[ "$SEPARATE_MODE" -eq 1 && -n "$SAFE_BRANCH" ]]; then
             compose_file="$PROJECT_ROOT/docker-compose.deps-${SAFE_BRANCH}.yml"
@@ -772,22 +950,23 @@ show_status() {
                 echo "    $line"
             done
         else
-            echo -e "    ${GRAY}No compose file found${NC}"
+            echo -e "  ${GRAY}No compose file found${NC}"
         fi
     fi
 
-    # Log files
+    # ── Logs ─────────────────────────────────────────────────────────────
     echo ""
-    echo -e "  ${BOLD}Logs:${NC}"
+    echo -e "  ${BOLD}${CYAN}LOGS${NC}"
+    echo -e "  ${GRAY}────────────────────────────────────────────────────────────${NC}"
     if [[ -L "$LOG_DIR/backend/latest.log" ]]; then
-        echo -e "    Backend:   $LOG_DIR/backend/latest.log"
+        echo -e "  Backend:   $LOG_DIR/backend/latest.log"
     else
-        echo -e "    Backend:   ${GRAY}No logs yet${NC}"
+        echo -e "  Backend:   ${GRAY}No logs yet${NC}"
     fi
     if [[ -L "$LOG_DIR/frontend/latest.log" ]]; then
-        echo -e "    Frontend:  $LOG_DIR/frontend/latest.log"
+        echo -e "  Frontend:  $LOG_DIR/frontend/latest.log"
     else
-        echo -e "    Frontend:  ${GRAY}No logs yet${NC}"
+        echo -e "  Frontend:  ${GRAY}No logs yet${NC}"
     fi
 
     echo ""
@@ -1119,6 +1298,11 @@ build_config_flags() {
         flags="$flags --config $PROJECT_ROOT/app-config.dev.yaml"
     fi
 
+    # Local overrides (secrets, credentials) — loaded last for highest precedence
+    if [[ -f "$PROJECT_ROOT/app-config.local.yaml" ]]; then
+        flags="$flags --config $PROJECT_ROOT/app-config.local.yaml"
+    fi
+
     local current_env
     current_env=$(get_current_env)
 
@@ -1171,9 +1355,9 @@ start_server_process() {
 
     # Run from project root using backstage-cli repo start with explicit configs
     # This ensures app-config.dev.yaml (full admin access) is always loaded
-    # Logs forwarded to both terminal and log file via tee
+    # Output goes to log file only — keeps terminal clean for interactive UI
     (cd "$PROJECT_ROOT" && BROWSER=none yarn backstage-cli repo start "$package_name" $config_flags) \
-        2>&1 | tee -a "$LOG_FILE" &
+        >> "$LOG_FILE" 2>&1 &
 
     if [[ "$component" == "backend" ]]; then
         BACKEND_PID=$!
@@ -1588,6 +1772,9 @@ start_backend() {
     # Wait for health
     wait_for_health "http://localhost:$port$HEALTH_ENDPOINT" 120 "Backend"
 
+    # Show status dashboard
+    show_status "$port" "$DEFAULT_FRONTEND_PORT"
+
     # Enter interactive loop
     interactive_loop
 }
@@ -1625,6 +1812,9 @@ start_frontend() {
     # Wait for frontend to be ready (check port, not HTTP health)
     # 300s timeout for cold starts (no bundler cache)
     wait_for_port "$port" 300 "Frontend"
+
+    # Show status dashboard
+    show_status "$DEFAULT_BACKEND_PORT" "$port"
 
     # Enter interactive loop
     interactive_loop
@@ -1672,6 +1862,9 @@ start_all() {
 
     wait $be_wait_pid 2>/dev/null
     wait $fe_wait_pid 2>/dev/null
+
+    # Show status dashboard
+    show_status "$be_port" "$fe_port"
 
     # Enter interactive loop
     interactive_loop

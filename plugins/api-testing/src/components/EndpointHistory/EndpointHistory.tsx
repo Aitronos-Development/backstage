@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { useState, useEffect } from 'react';
 import {
   makeStyles,
@@ -307,7 +322,7 @@ export function EndpointHistory({
   // Register with parent context for real-time WebSocket updates
   const historyCtx = useExecutionHistoryContext();
   useEffect(() => {
-    if (!historyCtx) return;
+    if (!historyCtx) return undefined;
     historyCtx.registerListener(testCaseId, prependRecord);
     return () => historyCtx.unregisterListener(testCaseId);
   }, [historyCtx, testCaseId, prependRecord]);
@@ -385,13 +400,15 @@ export function EndpointHistory({
           </ButtonGroup>
         </Box>
 
-        {loading && records.length === 0 ? (
+        {loading && records.length === 0 && (
           <Typography className={classes.emptyState}>Loading...</Typography>
-        ) : records.length === 0 ? (
+        )}
+        {!loading && records.length === 0 && (
           <Typography className={classes.emptyState}>
             No execution history yet
           </Typography>
-        ) : (
+        )}
+        {records.length > 0 && (
           <>
             <Table size="small">
               <TableBody>
@@ -402,11 +419,7 @@ export function EndpointHistory({
             </Table>
             {hasMore && (
               <Box className={classes.showMore}>
-                <Button
-                  size="small"
-                  variant="text"
-                  onClick={loadMore}
-                >
+                <Button size="small" variant="text" onClick={loadMore}>
                   Show more
                 </Button>
               </Box>

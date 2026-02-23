@@ -126,36 +126,42 @@ export type BackstageTypography = {
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h2: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h3: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h4: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h5: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
   h6: {
     fontFamily?: string;
     fontSize: number | string;
     fontWeight: number;
     marginBottom: number;
+    letterSpacing?: string;
   };
 };
 
@@ -272,6 +278,12 @@ export const palettes: {
     };
     primary: {
       main: string;
+      light: string;
+      dark: string;
+      contrastText: string;
+    };
+    secondary: {
+      main: string;
     };
     banner: {
       info: string;
@@ -343,6 +355,8 @@ export const palettes: {
     primary: {
       main: string;
       dark: string;
+      light: string;
+      contrastText: string;
     };
     secondary: {
       main: string;

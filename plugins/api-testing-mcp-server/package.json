@@ -4,7 +4,10 @@
   "private": true,
   "backstage": {
     "role": "backend-plugin",
-    "pluginId": "api-testing-mcp-server"
+    "pluginId": "api-testing-mcp-server",
+    "pluginPackages": [
+      "@backstage/plugin-api-testing-mcp-server"
+    ]
   },
   "repository": {
     "type": "git",

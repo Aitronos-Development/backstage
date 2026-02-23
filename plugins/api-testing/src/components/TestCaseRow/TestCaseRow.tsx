@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { useState, useMemo } from 'react';
 import {
   makeStyles,
@@ -26,10 +41,11 @@ function extractUsedVariables(testCase: TestCase): string[] {
   const found = new Set<string>();
   function scan(value: unknown): void {
     if (typeof value === 'string') {
-      let match;
       VARIABLE_PATTERN.lastIndex = 0;
-      while ((match = VARIABLE_PATTERN.exec(value)) !== null) {
+      let match = VARIABLE_PATTERN.exec(value);
+      while (match !== null) {
         found.add(match[1]);
+        match = VARIABLE_PATTERN.exec(value);
       }
     } else if (typeof value === 'object' && value !== null) {
       for (const v of Object.values(value)) scan(v);
@@ -63,6 +79,7 @@ const useStyles = makeStyles(theme => ({
   put: { backgroundColor: '#fca130', color: '#fff' },
   patch: { backgroundColor: '#50e3c2', color: '#fff' },
   delete: { backgroundColor: '#f93e3e', color: '#fff' },
+  flow: { backgroundColor: '#9c27b0', color: '#fff' },
   nameCell: {
     fontWeight: 500,
   },
@@ -172,8 +189,10 @@ export function TestCaseRow({
   const [expanded, setExpanded] = useState(false);
   const [showVars, setShowVars] = useState(false);
 
-  const methodClass = classes[testCase.method.toLowerCase() as keyof typeof classes] || '';
-  const showDetails = status === 'fail' && (result || error);
+  const methodClass =
+    classes[testCase.method.toLowerCase() as keyof typeof classes] || '';
+  const isFlow = testCase.method === 'FLOW';
+  const showDetails = isFlow || (status === 'fail' && (result || error));
 
   const usedVariables = useMemo(
     () => extractUsedVariables(testCase),
@@ -192,7 +211,11 @@ export function TestCaseRow({
           />
         </TableCell>
         <TableCell className={classes.nameCell}>{testCase.name}</TableCell>
-        <TableCell className={classes.pathCell}>{testCase.path}</TableCell>
+        <TableCell className={classes.pathCell}>
+          {isFlow
+            ? testCase.flow_metadata?.file ?? testCase.path
+            : testCase.path}
+        </TableCell>
         <TableCell>
           <TestResultBadge
             status={status}
@@ -210,11 +233,21 @@ export function TestCaseRow({
             </IconButton>
           )}
           {status === 'running' ? (
-            <IconButton size="small" className={classes.stopButton} onClick={onStop} title="Stop">
+            <IconButton
+              size="small"
+              className={classes.stopButton}
+              onClick={onStop}
+              title="Stop"
+            >
               <StopIcon />
             </IconButton>
           ) : (
-            <IconButton size="small" className={classes.runButton} onClick={onExecute} title="Run">
+            <IconButton
+              size="small"
+              className={classes.runButton}
+              onClick={onExecute}
+              title="Run"
+            >
               <PlayArrowIcon />
             </IconButton>
           )}
@@ -295,6 +328,24 @@ export function TestCaseRow({
           <TableCell colSpan={5} style={{ paddingTop: 0, paddingBottom: 0 }}>
             <Collapse in={expanded} timeout="auto" unmountOnExit>
               <Box className={classes.detailsBox}>
+                {isFlow && testCase.flow_metadata?.steps && (
+                  <Box className={classes.failureItem}>
+                    <Typography className={classes.detailLabel} variant="body2">
+                      Flow Steps
+                    </Typography>
+                    <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {testCase.flow_metadata.steps.map((step, i) => (
+                        <Chip
+                          key={step}
+                          size="small"
+                          label={`${i + 1}. ${step}`}
+                          variant="outlined"
+                          style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
                 {error && (
                   <Box className={classes.failureItem}>
                     <Typography className={classes.detailLabel} variant="body2">
@@ -306,7 +357,10 @@ export function TestCaseRow({
                 {result && (
                   <>
                     <Box className={classes.failureItem}>
-                      <Typography className={classes.detailLabel} variant="body2">
+                      <Typography
+                        className={classes.detailLabel}
+                        variant="body2"
+                      >
                         Status Code
                       </Typography>
                       <Typography variant="body2">
@@ -317,17 +371,27 @@ export function TestCaseRow({
                     </Box>
                     {result.details.bodyContainsFailures && (
                       <Box className={classes.failureItem}>
-                        <Typography className={classes.detailLabel} variant="body2">
+                        <Typography
+                          className={classes.detailLabel}
+                          variant="body2"
+                        >
                           Body Assertion Failures
                         </Typography>
                         <pre className={classes.pre}>
-                          {JSON.stringify(result.details.bodyContainsFailures, null, 2)}
+                          {JSON.stringify(
+                            result.details.bodyContainsFailures,
+                            null,
+                            2,
+                          )}
                         </pre>
                       </Box>
                     )}
                     {result.details.missingFields && (
                       <Box className={classes.failureItem}>
-                        <Typography className={classes.detailLabel} variant="body2">
+                        <Typography
+                          className={classes.detailLabel}
+                          variant="body2"
+                        >
                           Missing Required Fields
                         </Typography>
                         <Typography variant="body2">
@@ -337,13 +401,20 @@ export function TestCaseRow({
                     )}
                     {result.details.responseBody !== undefined && (
                       <Box className={classes.failureItem}>
-                        <Typography className={classes.detailLabel} variant="body2">
+                        <Typography
+                          className={classes.detailLabel}
+                          variant="body2"
+                        >
                           Response Body
                         </Typography>
                         <pre className={classes.pre}>
                           {typeof result.details.responseBody === 'string'
                             ? result.details.responseBody
-                            : JSON.stringify(result.details.responseBody, null, 2)}
+                            : JSON.stringify(
+                                result.details.responseBody,
+                                null,
+                                2,
+                              )}
                         </pre>
                       </Box>
                     )}
@@ -357,10 +428,7 @@ export function TestCaseRow({
       {/* Per-endpoint execution history */}
       <TableRow>
         <TableCell colSpan={5} style={{ paddingTop: 0, paddingBottom: 0 }}>
-          <EndpointHistory
-            routeGroup={routeGroup}
-            testCaseId={testCase.id}
-          />
+          <EndpointHistory routeGroup={routeGroup} testCaseId={testCase.id} />
         </TableCell>
       </TableRow>
     </>

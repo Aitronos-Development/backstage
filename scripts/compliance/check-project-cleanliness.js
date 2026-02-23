@@ -46,9 +46,15 @@ const ALLOWLIST = new Set([
   'plugins',
   'scripts',
 
+  // API testing
+  'api-tests',
+  'test-repositories',
+
   // Config files (dotfiles)
   '.clomonitor.yml',
   '.dockerignore',
+  '.gitmodules',
+  '.mcp.json',
   '.editorconfig',
   '.eslintignore',
   '.eslintrc.js',

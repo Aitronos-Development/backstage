@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { useState } from 'react';
 import {
   makeStyles,
@@ -342,14 +357,13 @@ export function VariableConfigPanel({
           <Box className={classes.listContainer}>
             {resolvedVariables.map(v => (
               <Box key={v.key} className={classes.variableRow}>
-                <Typography className={classes.variableKey}>
-                  {v.key}
-                </Typography>
+                <Typography className={classes.variableKey}>{v.key}</Typography>
 
                 <Box className={classes.variableValueWrap}>
                   {editingKey === v.key ? (
                     <>
                       <InputBase
+                        /* eslint-disable-next-line jsx-a11y/no-autofocus -- intentional focus on inline edit */
                         autoFocus
                         fullWidth
                         className={classes.editInput}
@@ -365,14 +379,12 @@ export function VariableConfigPanel({
                       </IconButton>
                     </>
                   ) : (
-                    <Tooltip
-                      title={v.value || '(empty)'}
-                      placement="top"
-                      arrow
-                    >
+                    <Tooltip title={v.value || '(empty)'} placement="top" arrow>
                       <Typography
                         component="div"
-                        className={`${classes.variableValue} ${!v.value ? classes.emptyValue : ''}`}
+                        className={`${classes.variableValue} ${
+                          !v.value ? classes.emptyValue : ''
+                        }`}
                         onClick={() => startEditing(v.key, v.value)}
                       >
                         {v.value || '(empty)'}
@@ -384,7 +396,9 @@ export function VariableConfigPanel({
                 <Chip
                   label={sourceLabel(v.source)}
                   size="small"
-                  className={`${classes.sourceChip} ${sourceChipClass(v.source)}`}
+                  className={`${classes.sourceChip} ${sourceChipClass(
+                    v.source,
+                  )}`}
                 />
 
                 <Box className={classes.rowActions}>
@@ -416,9 +430,7 @@ export function VariableConfigPanel({
 
         {/* Add new variable - form style */}
         <Box className={classes.addSection}>
-          <Typography className={classes.addTitle}>
-            Add new variable
-          </Typography>
+          <Typography className={classes.addTitle}>Add new variable</Typography>
 
           <Box className={classes.formRow}>
             <Typography className={classes.formLabel}>Name</Typography>

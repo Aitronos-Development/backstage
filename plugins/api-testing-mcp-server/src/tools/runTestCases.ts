@@ -1,4 +1,21 @@
+/*
+ * Copyright 2026 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { spawn } from 'node:child_process';
+import path from 'node:path';
 import { z } from 'zod';
 import {
   listTestCases,
@@ -28,6 +45,68 @@ interface InternalExecutionResult {
     headers: Record<string, string>;
     body?: unknown;
   };
+}
+
+// eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
+const FLOW_TESTS_DIR = path.resolve(__dirname, '../../../../test-repositories/Freddy.Backend.Tests');
+
+async function executeFlowTest(
+  testCase: TestCase,
+): Promise<InternalExecutionResult> {
+  const pytestNodeId = testCase.path;
+
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const proc = spawn(
+      'uv',
+      ['run', 'pytest', pytestNodeId, '-v', '--tb=short', '--no-header'],
+      { cwd: FLOW_TESTS_DIR, env: { ...process.env } },
+    );
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (d: Buffer) => {
+      stdout += d.toString();
+    });
+    proc.stderr.on('data', (d: Buffer) => {
+      stderr += d.toString();
+    });
+
+    proc.on('close', code => {
+      const responseTime = Date.now() - start;
+      const pass = code === 0;
+      const output = `${stdout}\n${stderr}`.trim();
+
+      const failureLines = output
+        .split('\n')
+        .filter(
+          l =>
+            l.includes('FAILED') ||
+            l.includes('AssertionError') ||
+            l.includes('assert '),
+        );
+
+      resolve({
+        pass,
+        statusCode: pass ? 200 : 500,
+        responseTime,
+        failureReason: pass
+          ? null
+          : failureLines.length > 0
+            ? failureLines.join('; ')
+            : output.slice(-500),
+        request: { method: 'FLOW', url: pytestNodeId, headers: {} },
+        response: {
+          status_code: code ?? 1,
+          headers: {},
+          body: output,
+        },
+      });
+    });
+
+    proc.on('error', err => reject(err));
+  });
 }
 
 async function executeTestCase(
@@ -222,7 +301,9 @@ export function registerRunTestCases(server: McpServer) {
 
       for (const tc of testCases) {
         try {
-          const execResult = await executeTestCase(tc, variables);
+          const execResult = tc.method === 'FLOW'
+            ? await executeFlowTest(tc)
+            : await executeTestCase(tc, variables);
 
           // Write history record
           const record = buildExecutionRecord({

@@ -1,6 +1,11 @@
 {
   "name": "@internal/plugin-api-testing-backend",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/backstage/backstage",
+    "directory": "plugins/api-testing-backend"
+  },
   "backstage": {
     "role": "backend-plugin",
     "pluginId": "api-testing",

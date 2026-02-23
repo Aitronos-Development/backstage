@@ -24,6 +24,7 @@ import ErrorOutline from '@material-ui/icons/ErrorOutline';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { ReactNode } from 'react';
 import { MarkdownContent } from '../MarkdownContent';
+import { CopyTextButton } from '../CopyTextButton';
 
 const getWarningTextColor = (
   severity: NonNullable<WarningProps['severity']>,
@@ -190,6 +191,13 @@ export function WarningPanel(props: WarningProps) {
             subTitle
           )}
         </Typography>
+        <span
+          role="presentation"
+          onClick={e => e.stopPropagation()}
+          onFocus={e => e.stopPropagation()}
+        >
+          <CopyTextButton text={subTitle} />
+        </span>
       </AccordionSummary>
       {(message || children) && (
         <AccordionDetails>
