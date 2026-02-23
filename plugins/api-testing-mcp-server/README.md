@@ -28,15 +28,15 @@ Then restart Claude Code to pick up the new server.
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `list_test_cases` | List all test cases for a route group |
-| `read_test_case` | Read a single test case by ID |
-| `create_test_case` | Create a new test case with headers, body, and assertions |
-| `edit_test_case` | Edit a test case field (supports replace, find-and-replace, and deep merge) |
-| `delete_test_case` | Delete a test case by ID |
-| `run_test_cases` | Execute test cases with optional variable overrides |
-| `get_execution_history` | Get execution history for a test case or route group |
+| Tool                    | Description                                                                 |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `list_test_cases`       | List all test cases for a route group                                       |
+| `read_test_case`        | Read a single test case by ID                                               |
+| `create_test_case`      | Create a new test case with headers, body, and assertions                   |
+| `edit_test_case`        | Edit a test case field (supports replace, find-and-replace, and deep merge) |
+| `delete_test_case`      | Delete a test case by ID                                                    |
+| `run_test_cases`        | Execute test cases with optional variable overrides                         |
+| `get_execution_history` | Get execution history for a test case or route group                        |
 
 ## Storage
 

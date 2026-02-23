@@ -37,8 +37,7 @@ export default createBackendModule({
           factory: createOAuthProviderFactory({
             authenticator: googleAuthenticator,
             async signInResolver({ result: { fullProfile } }, ctx) {
-              const email =
-                fullProfile.emails?.[0]?.value ?? fullProfile.email;
+              const email = fullProfile.emails?.[0]?.value ?? fullProfile.email;
               if (!email) {
                 throw new Error(
                   `Google user profile does not contain an email`,

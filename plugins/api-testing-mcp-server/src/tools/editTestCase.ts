@@ -53,7 +53,15 @@ export function registerEditTestCase(server: McpServer) {
             'instead of replacing it. Field must be an object.',
         ),
     },
-    async ({ route_group, test_case_id, field, new_value, old_value, replace_all, merge }) => {
+    async ({
+      route_group,
+      test_case_id,
+      field,
+      new_value,
+      old_value,
+      replace_all,
+      merge,
+    }) => {
       try {
         const updated = await editTestCase(route_group, test_case_id, {
           field: field as EditableField,

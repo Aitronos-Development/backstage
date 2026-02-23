@@ -98,7 +98,10 @@ interface ExecutionResult {
   expectedStatusCode: number | undefined;
   responseTime: number;
   details: {
-    bodyContainsFailures?: Record<string, { expected: unknown; actual: unknown }>;
+    bodyContainsFailures?: Record<
+      string,
+      { expected: unknown; actual: unknown }
+    >;
     missingFields?: string[];
     responseBody?: unknown;
   };
@@ -159,8 +162,14 @@ export async function createRouter(
 
   try {
     fs.watch(apiTestsDir, (_, filename) => {
-      if (filename && filename.endsWith('.json') && !filename.endsWith('.tmp')) {
-        const routeGroup = `/${  filename.replace(/\.json$/, '').replace(/-/g, '/')}`;
+      if (
+        filename &&
+        filename.endsWith('.json') &&
+        !filename.endsWith('.tmp')
+      ) {
+        const routeGroup = `/${filename
+          .replace(/\.json$/, '')
+          .replace(/-/g, '/')}`;
         invalidateCache(routeGroup);
         broadcast({ type: 'test-cases-changed', routeGroup });
       }
@@ -242,7 +251,7 @@ export async function createRouter(
     const routeGroups: string[] = [];
 
     for (const file of files) {
-      const routeGroup = `/${  file.replace(/\.json$/, '').replace(/-/g, '/')}`;
+      const routeGroup = `/${file.replace(/\.json$/, '').replace(/-/g, '/')}`;
       routeGroups.push(routeGroup);
     }
 
@@ -251,7 +260,7 @@ export async function createRouter(
 
   // --- Get single test case (must be registered before the wildcard list route) ---
   router.get('/test-cases/:routeGroup(*)/:id', async (req, res) => {
-    const routeGroup = `/${  req.params.routeGroup}`;
+    const routeGroup = `/${req.params.routeGroup}`;
     const testCase = await readTestCase(routeGroup, req.params.id);
     if (!testCase) {
       throw new NotFoundError(
@@ -263,7 +272,7 @@ export async function createRouter(
 
   // --- List test cases for a route group ---
   router.get('/test-cases/:routeGroup(*)', async (req, res) => {
-    const routeGroup = `/${  req.params.routeGroup}`;
+    const routeGroup = `/${req.params.routeGroup}`;
     const testCases = await listTestCases(routeGroup);
     res.json(testCases);
   });
@@ -293,14 +302,17 @@ export async function createRouter(
     }
     Object.assign(mergedVariables, variables || {});
 
-    const executionId = `exec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const executionId = `exec-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
     const controller = new AbortController();
     runningExecutions.set(executionId, controller);
 
     try {
-      const result = testCase.method === 'FLOW'
-        ? await executeFlowTest(testCase, controller.signal)
-        : await executeTestCase(testCase, mergedVariables, controller.signal);
+      const result =
+        testCase.method === 'FLOW'
+          ? await executeFlowTest(testCase, controller.signal)
+          : await executeTestCase(testCase, mergedVariables, controller.signal);
 
       // Write history record
       const record = buildExecutionRecord({
@@ -324,10 +336,24 @@ export async function createRouter(
         record,
       });
 
-      res.json({ executionId, pass: result.pass, statusCode: result.statusCode, expectedStatusCode: result.expectedStatusCode, responseTime: result.responseTime, details: result.details });
+      res.json({
+        executionId,
+        pass: result.pass,
+        statusCode: result.statusCode,
+        expectedStatusCode: result.expectedStatusCode,
+        responseTime: result.responseTime,
+        details: result.details,
+      });
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        res.json({ executionId, aborted: true, pass: false, statusCode: 0, responseTime: 0, details: {} });
+        res.json({
+          executionId,
+          aborted: true,
+          pass: false,
+          statusCode: 0,
+          responseTime: 0,
+          details: {},
+        });
       } else {
         throw err;
       }
@@ -355,14 +381,24 @@ export async function createRouter(
     Object.assign(mergedVariables, variables || {});
 
     const testCases = await listTestCases(routeGroup);
-    const results: Array<{ testCaseId: string; result: { pass: boolean; statusCode: number; expectedStatusCode: number | undefined; responseTime: number; details: ExecutionResult['details'] } }> = [];
+    const results: Array<{
+      testCaseId: string;
+      result: {
+        pass: boolean;
+        statusCode: number;
+        expectedStatusCode: number | undefined;
+        responseTime: number;
+        details: ExecutionResult['details'];
+      };
+    }> = [];
 
     for (const tc of testCases) {
       const controller = new AbortController();
       try {
-        const result = tc.method === 'FLOW'
-          ? await executeFlowTest(tc, controller.signal)
-          : await executeTestCase(tc, mergedVariables, controller.signal);
+        const result =
+          tc.method === 'FLOW'
+            ? await executeFlowTest(tc, controller.signal)
+            : await executeTestCase(tc, mergedVariables, controller.signal);
 
         // Write history record
         const record = buildExecutionRecord({
@@ -385,7 +421,16 @@ export async function createRouter(
           record,
         });
 
-        results.push({ testCaseId: tc.id, result: { pass: result.pass, statusCode: result.statusCode, expectedStatusCode: result.expectedStatusCode, responseTime: result.responseTime, details: result.details } });
+        results.push({
+          testCaseId: tc.id,
+          result: {
+            pass: result.pass,
+            statusCode: result.statusCode,
+            expectedStatusCode: result.expectedStatusCode,
+            responseTime: result.responseTime,
+            details: result.details,
+          },
+        });
       } catch {
         results.push({
           testCaseId: tc.id,
@@ -416,18 +461,25 @@ export async function createRouter(
       runningExecutions.delete(executionId);
       res.json({ stopped: true });
     } else {
-      res.json({ stopped: false, message: 'Execution not found or already completed' });
+      res.json({
+        stopped: false,
+        message: 'Execution not found or already completed',
+      });
     }
   });
 
   // --- History: per-endpoint ---
   router.get('/history/:routeGroup(*)/:testCaseId', async (req, res) => {
-    const routeGroup = `/${  req.params.routeGroup}`;
+    const routeGroup = `/${req.params.routeGroup}`;
     const { testCaseId } = req.params;
     const initiator = req.query.initiator as 'user' | 'agent' | undefined;
     const result = req.query.result as 'pass' | 'fail' | undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
-    const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
+    const limit = req.query.limit
+      ? parseInt(req.query.limit as string, 10)
+      : 50;
+    const offset = req.query.offset
+      ? parseInt(req.query.offset as string, 10)
+      : 0;
 
     const records = await historyStore.query(routeGroup, testCaseId, {
       initiator,
@@ -440,11 +492,15 @@ export async function createRouter(
 
   // --- History: route group overview ---
   router.get('/history/:routeGroup(*)', async (req, res) => {
-    const routeGroup = `/${  req.params.routeGroup}`;
+    const routeGroup = `/${req.params.routeGroup}`;
     const initiator = req.query.initiator as 'user' | 'agent' | undefined;
     const result = req.query.result as 'pass' | 'fail' | undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
-    const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
+    const limit = req.query.limit
+      ? parseInt(req.query.limit as string, 10)
+      : 50;
+    const offset = req.query.offset
+      ? parseInt(req.query.offset as string, 10)
+      : 0;
 
     const records = await historyStore.queryGroup(routeGroup, {
       initiator,
@@ -458,8 +514,11 @@ export async function createRouter(
   return router;
 }
 
-// eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
-const FLOW_TESTS_DIR = path.resolve(__dirname, '../../../../test-repositories/Freddy.Backend.Tests');
+const FLOW_TESTS_DIR = path.resolve(
+  // eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
+  __dirname,
+  '../../../../test-repositories/Freddy.Backend.Tests',
+);
 
 async function executeFlowTest(
   testCase: TestCase,
@@ -503,11 +562,13 @@ async function executeFlowTest(
             l.includes('AssertionError') ||
             l.includes('assert '),
         );
-      const failureReason = pass
-        ? null
-        : failureLines.length > 0
-          ? failureLines.join('; ')
-          : output.slice(-500);
+      let failureReason: string | null = null;
+      if (!pass) {
+        failureReason =
+          failureLines.length > 0
+            ? failureLines.join('; ')
+            : output.slice(-500);
+      }
 
       resolve({
         pass,
@@ -606,15 +667,23 @@ async function executeTestCase(
   }
 
   // Body contains assertion
-  if (testCase.assertions.body_contains && typeof responseBody === 'object' && responseBody !== null) {
+  if (
+    testCase.assertions.body_contains &&
+    typeof responseBody === 'object' &&
+    responseBody !== null
+  ) {
     const failures: Record<string, { expected: unknown; actual: unknown }> = {};
-    for (const [key, expected] of Object.entries(testCase.assertions.body_contains)) {
+    for (const [key, expected] of Object.entries(
+      testCase.assertions.body_contains,
+    )) {
       const actual = (responseBody as Record<string, unknown>)[key];
       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
         failures[key] = { expected, actual };
         pass = false;
         failureReasons.push(
-          `Body field '${key}': expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+          `Body field '${key}': expected ${JSON.stringify(
+            expected,
+          )}, got ${JSON.stringify(actual)}`,
         );
       }
     }
@@ -624,7 +693,11 @@ async function executeTestCase(
   }
 
   // Body schema assertion
-  if (testCase.assertions.body_schema?.required_fields && typeof responseBody === 'object' && responseBody !== null) {
+  if (
+    testCase.assertions.body_schema?.required_fields &&
+    typeof responseBody === 'object' &&
+    responseBody !== null
+  ) {
     const missing = testCase.assertions.body_schema.required_fields.filter(
       field => !(field in (responseBody as Record<string, unknown>)),
     );
@@ -632,7 +705,9 @@ async function executeTestCase(
       details.missingFields = missing;
       pass = false;
       failureReasons.push(
-        `Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`,
+        `Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(
+          ', ',
+        )}`,
       );
     }
   }
@@ -654,6 +729,7 @@ async function executeTestCase(
       headers: responseHeaders,
       ...(responseBody !== undefined && { body: responseBody }),
     },
-    _failureReason: failureReasons.length > 0 ? failureReasons.join('; ') : null,
+    _failureReason:
+      failureReasons.length > 0 ? failureReasons.join('; ') : null,
   };
 }

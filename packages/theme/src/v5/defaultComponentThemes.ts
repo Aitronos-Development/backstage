@@ -449,8 +449,7 @@ export const defaultComponentThemes: ThemeOptions['components'] = {
     styleOverrides: {
       tooltip: ({ theme }) => ({
         borderRadius: 8,
-        backgroundColor:
-          theme.palette.mode === 'dark' ? '#2A283E' : '#312E81',
+        backgroundColor: theme.palette.mode === 'dark' ? '#2A283E' : '#312E81',
         fontSize: '0.75rem',
         fontWeight: 500,
         padding: '6px 12px',

@@ -129,7 +129,9 @@ export function readAppConfig(): ApiTestingConfig {
   try {
     const content = fs.readFileSync(configPath, 'utf-8');
     const parsed = yaml.load(content) as Record<string, unknown>;
-    const apiTesting = parsed?.apiTesting as Record<string, unknown> | undefined;
+    const apiTesting = parsed?.apiTesting as
+      | Record<string, unknown>
+      | undefined;
     if (!apiTesting) return result;
 
     result.defaultEnvironment =

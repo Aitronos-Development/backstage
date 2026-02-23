@@ -48,9 +48,7 @@ export function generateExecutionId(): string {
   return `exec-${bytes.toString('hex')}`;
 }
 
-function maskHeaders(
-  headers: Record<string, string>,
-): Record<string, string> {
+function maskHeaders(headers: Record<string, string>): Record<string, string> {
   const masked = { ...headers };
   for (const key of Object.keys(masked)) {
     if (key.toLowerCase() === 'authorization') {
@@ -114,7 +112,7 @@ export async function append(
 ): Promise<void> {
   const filePath = getEndpointHistoryPath(routeGroup, testCaseId);
   ensureDir(path.dirname(filePath));
-  const line = `${JSON.stringify(record)  }\n`;
+  const line = `${JSON.stringify(record)}\n`;
   fs.appendFileSync(filePath, line, 'utf-8');
 }
 

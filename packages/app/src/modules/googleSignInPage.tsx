@@ -23,18 +23,19 @@ export const googleSignInModule = createFrontendModule({
   extensions: [
     SignInPageBlueprint.make({
       params: {
-        loader: async () => props => (
-          <SignInPage
-            {...props}
-            provider={{
-              id: 'google',
-              title: 'Google',
-              message: 'Sign in with Google',
-              apiRef: googleAuthApiRef,
-            }}
-            auto
-          />
-        ),
+        loader: async () => props =>
+          (
+            <SignInPage
+              {...props}
+              provider={{
+                id: 'google',
+                title: 'Google',
+                message: 'Sign in with Google',
+                apiRef: googleAuthApiRef,
+              }}
+              auto
+            />
+          ),
       },
     }),
   ],

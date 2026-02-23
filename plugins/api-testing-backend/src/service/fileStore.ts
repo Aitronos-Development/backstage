@@ -17,13 +17,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { RouteGroupFile, TestCase } from './types';
 
-// eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
-const API_TESTS_DIR = path.resolve(__dirname, '../../../../test-repositories/Freddy.Backend.Tests/test-suites');
+const API_TESTS_DIR = path.resolve(
+  // eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
+  __dirname,
+  '../../../../test-repositories/Freddy.Backend.Tests/test-suites',
+);
 
 const cache = new Map<string, RouteGroupFile>();
 
 function routeGroupToFilename(routeGroup: string): string {
-  return `${routeGroup.replace(/^\//, '').replace(/\//g, '-')  }.json`;
+  return `${routeGroup.replace(/^\//, '').replace(/\//g, '-')}.json`;
 }
 
 function getFilePath(routeGroup: string): string {

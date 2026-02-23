@@ -48,7 +48,8 @@ const useStyles = makeStyles(
       width: '100%',
       '&:hover': {
         background:
-          theme.palette.navigation.navItem?.hoverBackground || 'rgba(255, 255, 255, 0.05)',
+          theme.palette.navigation.navItem?.hoverBackground ||
+          'rgba(255, 255, 255, 0.05)',
         color: theme.palette.navigation.selectedColor,
       },
       display: 'flex',
@@ -64,7 +65,9 @@ const useStyles = makeStyles(
       width: '100%',
     },
     selected: {
-      background: theme.palette.navigation.navItem?.hoverBackground || 'rgba(255, 255, 255, 0.08)',
+      background:
+        theme.palette.navigation.navItem?.hoverBackground ||
+        'rgba(255, 255, 255, 0.08)',
       color: theme.palette.navigation.selectedColor,
     },
     label: {
@@ -96,7 +99,8 @@ const useStyles = makeStyles(
       padding: '10px 0 10px 0',
       '&:hover': {
         background:
-          theme.palette.navigation.navItem?.hoverBackground || 'rgba(255, 255, 255, 0.05)',
+          theme.palette.navigation.navItem?.hoverBackground ||
+          'rgba(255, 255, 255, 0.05)',
         color: theme.palette.navigation.selectedColor,
       },
     },

@@ -24,10 +24,7 @@ import {
   buildExecutionRecord,
 } from '../storage';
 import type { TestCase } from '../storage';
-import {
-  resolveVariables,
-  buildMcpVariables,
-} from '../variableResolution';
+import { resolveVariables, buildMcpVariables } from '../variableResolution';
 
 interface InternalExecutionResult {
   pass: boolean;
@@ -47,8 +44,11 @@ interface InternalExecutionResult {
   };
 }
 
-// eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
-const FLOW_TESTS_DIR = path.resolve(__dirname, '../../../../test-repositories/Freddy.Backend.Tests');
+const FLOW_TESTS_DIR = path.resolve(
+  // eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
+  __dirname,
+  '../../../../test-repositories/Freddy.Backend.Tests',
+);
 
 async function executeFlowTest(
   testCase: TestCase,
@@ -91,11 +91,12 @@ async function executeFlowTest(
         pass,
         statusCode: pass ? 200 : 500,
         responseTime,
-        failureReason: pass
-          ? null
-          : failureLines.length > 0
+        failureReason: (() => {
+          if (pass) return null;
+          return failureLines.length > 0
             ? failureLines.join('; ')
-            : output.slice(-500),
+            : output.slice(-500);
+        })(),
         request: { method: 'FLOW', url: pytestNodeId, headers: {} },
         response: {
           status_code: code ?? 1,
@@ -180,12 +181,16 @@ async function executeTestCase(
     typeof responseBody === 'object' &&
     responseBody !== null
   ) {
-    for (const [key, expected] of Object.entries(testCase.assertions.body_contains)) {
+    for (const [key, expected] of Object.entries(
+      testCase.assertions.body_contains,
+    )) {
       const actual = (responseBody as Record<string, unknown>)[key];
       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
         pass = false;
         failureReasons.push(
-          `Body field '${key}': expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+          `Body field '${key}': expected ${JSON.stringify(
+            expected,
+          )}, got ${JSON.stringify(actual)}`,
         );
       }
     }
@@ -202,7 +207,9 @@ async function executeTestCase(
     if (missing.length > 0) {
       pass = false;
       failureReasons.push(
-        `Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`,
+        `Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(
+          ', ',
+        )}`,
       );
     }
   }
@@ -301,9 +308,10 @@ export function registerRunTestCases(server: McpServer) {
 
       for (const tc of testCases) {
         try {
-          const execResult = tc.method === 'FLOW'
-            ? await executeFlowTest(tc)
-            : await executeTestCase(tc, variables);
+          const execResult =
+            tc.method === 'FLOW'
+              ? await executeFlowTest(tc)
+              : await executeTestCase(tc, variables);
 
           // Write history record
           const record = buildExecutionRecord({

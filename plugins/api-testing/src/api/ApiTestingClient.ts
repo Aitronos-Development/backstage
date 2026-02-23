@@ -106,7 +106,9 @@ export class ApiTestingClient {
     routeGroup: string,
     variables?: Record<string, string>,
     environment?: string,
-  ): Promise<Array<{ testCaseId: string; result: Omit<ExecutionResult, 'executionId'> }>> {
+  ): Promise<
+    Array<{ testCaseId: string; result: Omit<ExecutionResult, 'executionId'> }>
+  > {
     const base = await this.baseUrl();
     const response = await this.fetchApi.fetch(`${base}/execute-all`, {
       method: 'POST',
@@ -154,7 +156,9 @@ export class ApiTestingClient {
     const url = `${base}/history/${encoded}/${testCaseId}${qs ? `?${qs}` : ''}`;
     const response = await this.fetchApi.fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to fetch endpoint history: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch endpoint history: ${response.statusText}`,
+      );
     }
     return response.json();
   }
@@ -180,7 +184,9 @@ export class ApiTestingClient {
     const url = `${base}/history/${encoded}${qs ? `?${qs}` : ''}`;
     const response = await this.fetchApi.fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to fetch route group history: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch route group history: ${response.statusText}`,
+      );
     }
     return response.json();
   }

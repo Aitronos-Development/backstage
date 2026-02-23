@@ -35,7 +35,11 @@ class TestCaseWatcher extends EventEmitter {
 
     try {
       this.watcher = fs.watch(dir, (_eventType, filename) => {
-        if (filename && filename.endsWith('.json') && !filename.endsWith('.tmp')) {
+        if (
+          filename &&
+          filename.endsWith('.json') &&
+          !filename.endsWith('.tmp')
+        ) {
           this.handleChange(filename);
         }
       });
@@ -75,10 +79,7 @@ class TestCaseWatcher extends EventEmitter {
     }, 1000);
   }
 
-  private scanFiles(
-    dir: string,
-    mtimes: Map<string, number>,
-  ): void {
+  private scanFiles(dir: string, mtimes: Map<string, number>): void {
     if (!fs.existsSync(dir)) return;
 
     const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
@@ -106,11 +107,7 @@ class TestCaseWatcher extends EventEmitter {
   }
 
   private handleChange(filename: string): void {
-    const routeGroup =
-      `/${ 
-      filename
-        .replace(/\.json$/, '')
-        .replace(/-/g, '/')}`;
+    const routeGroup = `/${filename.replace(/\.json$/, '').replace(/-/g, '/')}`;
 
     invalidateCache(routeGroup);
 

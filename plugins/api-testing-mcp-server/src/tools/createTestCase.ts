@@ -38,7 +38,10 @@ export function registerCreateTestCase(server: McpServer) {
         .describe('Request body as JSON object'),
       assertions: z
         .object({
-          status_code: z.number().optional().describe('Expected HTTP status code'),
+          status_code: z
+            .number()
+            .optional()
+            .describe('Expected HTTP status code'),
           body_contains: z
             .record(z.unknown())
             .optional()

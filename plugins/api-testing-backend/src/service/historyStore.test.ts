@@ -72,16 +72,29 @@ describe('historyStore', () => {
     });
 
     it('returns most recent first', async () => {
-      const r1 = makeRecord({ id: 'exec-0001', timestamp: '2026-01-01T00:00:00Z' });
-      const r2 = makeRecord({ id: 'exec-0002', timestamp: '2026-01-02T00:00:00Z' });
-      const r3 = makeRecord({ id: 'exec-0003', timestamp: '2026-01-03T00:00:00Z' });
+      const r1 = makeRecord({
+        id: 'exec-0001',
+        timestamp: '2026-01-01T00:00:00Z',
+      });
+      const r2 = makeRecord({
+        id: 'exec-0002',
+        timestamp: '2026-01-02T00:00:00Z',
+      });
+      const r3 = makeRecord({
+        id: 'exec-0003',
+        timestamp: '2026-01-03T00:00:00Z',
+      });
 
       await historyStore.append('/v1/rules', 'tc-1', r1);
       await historyStore.append('/v1/rules', 'tc-1', r2);
       await historyStore.append('/v1/rules', 'tc-1', r3);
 
       const results = await historyStore.query('/v1/rules', 'tc-1');
-      expect(results.map(r => r.id)).toEqual(['exec-0003', 'exec-0002', 'exec-0001']);
+      expect(results.map(r => r.id)).toEqual([
+        'exec-0003',
+        'exec-0002',
+        'exec-0001',
+      ]);
     });
 
     it('returns empty array for non-existent endpoint', async () => {
@@ -93,10 +106,30 @@ describe('historyStore', () => {
   describe('filters', () => {
     beforeEach(async () => {
       const records = [
-        makeRecord({ id: 'e1', initiator: 'user', result: 'pass', timestamp: '2026-01-01T00:00:00Z' }),
-        makeRecord({ id: 'e2', initiator: 'agent', result: 'fail', timestamp: '2026-01-02T00:00:00Z' }),
-        makeRecord({ id: 'e3', initiator: 'user', result: 'fail', timestamp: '2026-01-03T00:00:00Z' }),
-        makeRecord({ id: 'e4', initiator: 'agent', result: 'pass', timestamp: '2026-01-04T00:00:00Z' }),
+        makeRecord({
+          id: 'e1',
+          initiator: 'user',
+          result: 'pass',
+          timestamp: '2026-01-01T00:00:00Z',
+        }),
+        makeRecord({
+          id: 'e2',
+          initiator: 'agent',
+          result: 'fail',
+          timestamp: '2026-01-02T00:00:00Z',
+        }),
+        makeRecord({
+          id: 'e3',
+          initiator: 'user',
+          result: 'fail',
+          timestamp: '2026-01-03T00:00:00Z',
+        }),
+        makeRecord({
+          id: 'e4',
+          initiator: 'agent',
+          result: 'pass',
+          timestamp: '2026-01-04T00:00:00Z',
+        }),
       ];
       for (const r of records) {
         await historyStore.append('/v1/rules', 'tc-1', r);
@@ -104,12 +137,16 @@ describe('historyStore', () => {
     });
 
     it('filters by initiator', async () => {
-      const results = await historyStore.query('/v1/rules', 'tc-1', { initiator: 'agent' });
+      const results = await historyStore.query('/v1/rules', 'tc-1', {
+        initiator: 'agent',
+      });
       expect(results.map(r => r.id)).toEqual(['e4', 'e2']);
     });
 
     it('filters by result', async () => {
-      const results = await historyStore.query('/v1/rules', 'tc-1', { result: 'fail' });
+      const results = await historyStore.query('/v1/rules', 'tc-1', {
+        result: 'fail',
+      });
       expect(results.map(r => r.id)).toEqual(['e3', 'e2']);
     });
 
@@ -125,22 +162,31 @@ describe('historyStore', () => {
   describe('pagination', () => {
     beforeEach(async () => {
       for (let i = 1; i <= 5; i++) {
-        await historyStore.append('/v1/rules', 'tc-1', makeRecord({
-          id: `e${i}`,
-          timestamp: `2026-01-0${i}T00:00:00Z`,
-        }));
+        await historyStore.append(
+          '/v1/rules',
+          'tc-1',
+          makeRecord({
+            id: `e${i}`,
+            timestamp: `2026-01-0${i}T00:00:00Z`,
+          }),
+        );
       }
     });
 
     it('respects limit', async () => {
-      const results = await historyStore.query('/v1/rules', 'tc-1', { limit: 2 });
+      const results = await historyStore.query('/v1/rules', 'tc-1', {
+        limit: 2,
+      });
       expect(results).toHaveLength(2);
       expect(results[0].id).toBe('e5');
       expect(results[1].id).toBe('e4');
     });
 
     it('respects offset', async () => {
-      const results = await historyStore.query('/v1/rules', 'tc-1', { limit: 2, offset: 2 });
+      const results = await historyStore.query('/v1/rules', 'tc-1', {
+        limit: 2,
+        offset: 2,
+      });
       expect(results).toHaveLength(2);
       expect(results[0].id).toBe('e3');
       expect(results[1].id).toBe('e2');
@@ -150,10 +196,14 @@ describe('historyStore', () => {
   describe('tail', () => {
     it('returns last N records in reverse chronological order', async () => {
       for (let i = 1; i <= 5; i++) {
-        await historyStore.append('/v1/rules', 'tc-1', makeRecord({
-          id: `e${i}`,
-          timestamp: `2026-01-0${i}T00:00:00Z`,
-        }));
+        await historyStore.append(
+          '/v1/rules',
+          'tc-1',
+          makeRecord({
+            id: `e${i}`,
+            timestamp: `2026-01-0${i}T00:00:00Z`,
+          }),
+        );
       }
 
       const results = await historyStore.tail('/v1/rules', 'tc-1', 3);
@@ -169,21 +219,33 @@ describe('historyStore', () => {
 
   describe('queryGroup', () => {
     it('aggregates records across multiple endpoints', async () => {
-      await historyStore.append('/v1/rules', 'tc-1', makeRecord({
-        id: 'a1',
-        test_case_id: 'tc-1',
-        timestamp: '2026-01-01T00:00:00Z',
-      }));
-      await historyStore.append('/v1/rules', 'tc-2', makeRecord({
-        id: 'a2',
-        test_case_id: 'tc-2',
-        timestamp: '2026-01-03T00:00:00Z',
-      }));
-      await historyStore.append('/v1/rules', 'tc-1', makeRecord({
-        id: 'a3',
-        test_case_id: 'tc-1',
-        timestamp: '2026-01-02T00:00:00Z',
-      }));
+      await historyStore.append(
+        '/v1/rules',
+        'tc-1',
+        makeRecord({
+          id: 'a1',
+          test_case_id: 'tc-1',
+          timestamp: '2026-01-01T00:00:00Z',
+        }),
+      );
+      await historyStore.append(
+        '/v1/rules',
+        'tc-2',
+        makeRecord({
+          id: 'a2',
+          test_case_id: 'tc-2',
+          timestamp: '2026-01-03T00:00:00Z',
+        }),
+      );
+      await historyStore.append(
+        '/v1/rules',
+        'tc-1',
+        makeRecord({
+          id: 'a3',
+          test_case_id: 'tc-1',
+          timestamp: '2026-01-02T00:00:00Z',
+        }),
+      );
 
       const results = await historyStore.queryGroup('/v1/rules');
       expect(results.map(r => r.id)).toEqual(['a2', 'a3', 'a1']);
@@ -303,7 +365,9 @@ describe('historyStore', () => {
 
   describe('generateExecutionId', () => {
     it('produces unique IDs', () => {
-      const ids = new Set(Array.from({ length: 100 }, () => historyStore.generateExecutionId()));
+      const ids = new Set(
+        Array.from({ length: 100 }, () => historyStore.generateExecutionId()),
+      );
       expect(ids.size).toBe(100);
     });
 

@@ -51,6 +51,6 @@ export async function registerInClaudeSettings(
 
   config.mcpServers = mcpServers;
 
-  fs.writeFileSync(mcpJsonPath, `${JSON.stringify(config, null, 2)  }\n`);
+  fs.writeFileSync(mcpJsonPath, `${JSON.stringify(config, null, 2)}\n`);
   console.error('[api-testing-mcp] Registered MCP server in .mcp.json');
 }

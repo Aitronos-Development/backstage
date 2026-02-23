@@ -31,8 +31,7 @@ const cache = new Map<string, RouteGroupFile>();
 const locks = new Map<string, Promise<void>>();
 
 function generateId(): string {
-  const chars =
-    'abcdefghijklmnopqrstuvwxyz0123456789';
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   const bytes = crypto.randomBytes(6);
   let id = 'tc-';
   for (let i = 0; i < 6; i++) {
@@ -42,11 +41,7 @@ function generateId(): string {
 }
 
 function routeGroupToFilename(routeGroup: string): string {
-  return (
-    `${routeGroup
-      .replace(/^\//, '')
-      .replace(/\//g, '-')  }.json`
-  );
+  return `${routeGroup.replace(/^\//, '').replace(/\//g, '-')}.json`;
 }
 
 function getFilePath(routeGroup: string): string {
@@ -107,8 +102,8 @@ export function loadRouteGroup(routeGroup: string): RouteGroupFile {
 function saveRouteGroup(routeGroup: string, data: RouteGroupFile): void {
   ensureDir();
   const filePath = getFilePath(routeGroup);
-  const tmpPath = `${filePath  }.tmp`;
-  fs.writeFileSync(tmpPath, `${JSON.stringify(data, null, 2)  }\n`, 'utf-8');
+  const tmpPath = `${filePath}.tmp`;
+  fs.writeFileSync(tmpPath, `${JSON.stringify(data, null, 2)}\n`, 'utf-8');
   fs.renameSync(tmpPath, filePath);
   cache.set(routeGroup, data);
 }
@@ -121,9 +116,7 @@ export function routeGroupExists(routeGroup: string): boolean {
   return fs.existsSync(getFilePath(routeGroup));
 }
 
-export async function listTestCases(
-  routeGroup: string,
-): Promise<TestCase[]> {
+export async function listTestCases(routeGroup: string): Promise<TestCase[]> {
   const data = loadRouteGroup(routeGroup);
   return data.test_cases;
 }
