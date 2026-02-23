@@ -1,0 +1,3 @@
+[submodule "test-repositories/Freddy.Backend.Tests"]
+	path = test-repositories/Freddy.Backend.Tests
+	url = https://github.com/Aitronos-Development/Freddy.Backend.Tests.git
