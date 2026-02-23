@@ -23,6 +23,7 @@ export { useTestExecution } from './hooks/useTestExecution';
 export { useWebSocket } from './hooks/useWebSocket';
 export { useExecutionHistory } from './hooks/useExecutionHistory';
 export { useVariables } from './hooks/useVariables';
+export { useErrorAnalysis } from './hooks/useErrorAnalysis';
 
 // Components
 export { TestCaseRow } from './components/TestCaseRow/TestCaseRow';

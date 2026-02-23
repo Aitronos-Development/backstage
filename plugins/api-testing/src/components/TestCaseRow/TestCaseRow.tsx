@@ -24,6 +24,7 @@ import {
   Typography,
   Chip,
   TextField,
+  Button,
 } from '@material-ui/core';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import StopIcon from '@material-ui/icons/Stop';
@@ -33,6 +34,7 @@ import TuneIcon from '@material-ui/icons/Tune';
 import { TestResultBadge } from '../TestResultBadge/TestResultBadge';
 import { EndpointHistory } from '../EndpointHistory/EndpointHistory';
 import { FlowStepsPipeline } from '../FlowStepsPipeline/FlowStepsPipeline';
+import { useErrorAnalysis } from '../../hooks/useErrorAnalysis';
 import type { TestCase, ExecutionResult, TestStatus } from '../../api/types';
 
 const VARIABLE_PATTERN = /\{\{(\w+)\}\}/g;
@@ -189,6 +191,40 @@ const useStyles = makeStyles(theme => ({
       borderRadius: 6,
     },
   },
+  analysisBanner: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: theme.spacing(1),
+    padding: theme.spacing(1.5, 2),
+    borderRadius: 8,
+    backgroundColor:
+      theme.palette.type === 'dark'
+        ? 'rgba(244,67,54,0.08)'
+        : 'rgba(244,67,54,0.04)',
+    border: `1px solid ${theme.palette.error.main}30`,
+    marginBottom: theme.spacing(1.5),
+  },
+  analysisSummary: {
+    fontFamily: MONO_FONT,
+    fontSize: '0.8rem',
+    lineHeight: 1.6,
+    color: theme.palette.error.main,
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+  },
+  logToggle: {
+    textTransform: 'none' as const,
+    fontSize: '0.78rem',
+    fontWeight: 500,
+    color: theme.palette.text.secondary,
+    padding: theme.spacing(0.5, 0),
+    minWidth: 0,
+    '&:hover': {
+      backgroundColor: 'transparent',
+      color: theme.palette.text.primary,
+    },
+  },
 }));
 
 interface TestCaseRowProps {
@@ -221,6 +257,14 @@ export function TestCaseRow({
   const classes = useStyles();
   const [expanded, setExpanded] = useState(false);
   const [showVars, setShowVars] = useState(false);
+  const [showLog, setShowLog] = useState(false);
+
+  const errorSummary = useErrorAnalysis({
+    method: testCase.method,
+    status,
+    result,
+    error,
+  });
 
   const methodClass =
     classes[testCase.method.toLowerCase() as keyof typeof classes] || '';
@@ -371,6 +415,7 @@ export function TestCaseRow({
           <TableCell colSpan={5} style={{ paddingTop: 0, paddingBottom: 0 }}>
             <Collapse in={expanded} timeout="auto" unmountOnExit>
               <Box className={classes.detailsBox}>
+                {/* Flow steps pipeline — always visible */}
                 {isFlow && testCase.flow_metadata?.steps && (
                   <Box className={classes.failureItem}>
                     <Typography className={classes.detailLabel} variant="body2">
@@ -383,78 +428,103 @@ export function TestCaseRow({
                     />
                   </Box>
                 )}
-                {error && (
-                  <Box className={classes.failureItem}>
-                    <Typography className={classes.detailLabel} variant="body2">
-                      Error
-                    </Typography>
-                    <pre className={classes.pre}>{error}</pre>
+                {/* Error summary banner */}
+                {status === 'fail' && errorSummary && (
+                  <Box className={classes.analysisBanner}>
+                    <pre className={classes.analysisSummary}>
+                      {errorSummary}
+                    </pre>
                   </Box>
                 )}
-                {result && (
+                {/* Log toggle — collapsed by default */}
+                {(error || result) && (
                   <>
-                    <Box className={classes.failureItem}>
-                      <Typography
-                        className={classes.detailLabel}
-                        variant="body2"
-                      >
-                        Status Code
-                      </Typography>
-                      <Typography variant="body2">
-                        Received: {result.statusCode}
-                        {result.expectedStatusCode !== undefined &&
-                          ` (expected: ${result.expectedStatusCode})`}
-                      </Typography>
-                    </Box>
-                    {result.details.bodyContainsFailures && (
-                      <Box className={classes.failureItem}>
-                        <Typography
-                          className={classes.detailLabel}
-                          variant="body2"
-                        >
-                          Body Assertion Failures
-                        </Typography>
-                        <pre className={classes.pre}>
-                          {JSON.stringify(
-                            result.details.bodyContainsFailures,
-                            null,
-                            2,
+                    <Button
+                      className={classes.logToggle}
+                      onClick={() => setShowLog(prev => !prev)}
+                      disableRipple
+                    >
+                      {showLog ? 'Hide Log \u25B4' : 'Show Log \u25BE'}
+                    </Button>
+                    <Collapse in={showLog} timeout="auto" unmountOnExit>
+                      {error && (
+                        <Box className={classes.failureItem}>
+                          <Typography
+                            className={classes.detailLabel}
+                            variant="body2"
+                          >
+                            Error
+                          </Typography>
+                          <pre className={classes.pre}>{error}</pre>
+                        </Box>
+                      )}
+                      {result && (
+                        <>
+                          <Box className={classes.failureItem}>
+                            <Typography
+                              className={classes.detailLabel}
+                              variant="body2"
+                            >
+                              Status Code
+                            </Typography>
+                            <Typography variant="body2">
+                              Received: {result.statusCode}
+                              {result.expectedStatusCode !== undefined &&
+                                ` (expected: ${result.expectedStatusCode})`}
+                            </Typography>
+                          </Box>
+                          {result.details.bodyContainsFailures && (
+                            <Box className={classes.failureItem}>
+                              <Typography
+                                className={classes.detailLabel}
+                                variant="body2"
+                              >
+                                Body Assertion Failures
+                              </Typography>
+                              <pre className={classes.pre}>
+                                {JSON.stringify(
+                                  result.details.bodyContainsFailures,
+                                  null,
+                                  2,
+                                )}
+                              </pre>
+                            </Box>
                           )}
-                        </pre>
-                      </Box>
-                    )}
-                    {result.details.missingFields && (
-                      <Box className={classes.failureItem}>
-                        <Typography
-                          className={classes.detailLabel}
-                          variant="body2"
-                        >
-                          Missing Required Fields
-                        </Typography>
-                        <Typography variant="body2">
-                          {result.details.missingFields.join(', ')}
-                        </Typography>
-                      </Box>
-                    )}
-                    {result.details.responseBody !== undefined && (
-                      <Box className={classes.failureItem}>
-                        <Typography
-                          className={classes.detailLabel}
-                          variant="body2"
-                        >
-                          Response Body
-                        </Typography>
-                        <pre className={classes.pre}>
-                          {typeof result.details.responseBody === 'string'
-                            ? result.details.responseBody
-                            : JSON.stringify(
-                                result.details.responseBody,
-                                null,
-                                2,
-                              )}
-                        </pre>
-                      </Box>
-                    )}
+                          {result.details.missingFields && (
+                            <Box className={classes.failureItem}>
+                              <Typography
+                                className={classes.detailLabel}
+                                variant="body2"
+                              >
+                                Missing Required Fields
+                              </Typography>
+                              <Typography variant="body2">
+                                {result.details.missingFields.join(', ')}
+                              </Typography>
+                            </Box>
+                          )}
+                          {result.details.responseBody !== undefined && (
+                            <Box className={classes.failureItem}>
+                              <Typography
+                                className={classes.detailLabel}
+                                variant="body2"
+                              >
+                                Response Body
+                              </Typography>
+                              <pre className={classes.pre}>
+                                {typeof result.details.responseBody === 'string'
+                                  ? result.details.responseBody
+                                  : JSON.stringify(
+                                      result.details.responseBody,
+                                      null,
+                                      2,
+                                    )}
+                              </pre>
+                            </Box>
+                          )}
+                        </>
+                      )}
+                    </Collapse>
                   </>
                 )}
               </Box>
