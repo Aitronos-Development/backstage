@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  useState,
-  useMemo,
-  useCallback,
-  useRef,
-} from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { Content, Header, Page } from '@backstage/core-components';
 import Accordion from '@material-ui/core/Accordion';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
@@ -49,6 +44,7 @@ import {
   ExecutionHistoryContext,
 } from '@internal/plugin-api-testing';
 import type { ExecutionRecord } from '@internal/plugin-api-testing';
+import { HeaderThemeToggle } from '../modules/appModuleNav';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -214,7 +210,8 @@ function RouteGroupAccordion({
           size="small"
           className={classes.badge}
         />
-        <span
+        <Typography
+          component="span"
           className={`${classes.statusDot} ${statusDotClass}`}
           style={{ marginLeft: 8, alignSelf: 'center' }}
         />
@@ -231,8 +228,7 @@ function RouteGroupAccordion({
             <TableBody>
               {testCases.map(tc => {
                 const state = execution.getState(tc.id);
-                const tcRuntime =
-                  variablesCtx.runtimeOverrides[tc.id] ?? {};
+                const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
                 const tcMerged = {
                   ...variablesCtx.mergedVariables,
                   ...tcRuntime,
@@ -271,7 +267,7 @@ function RouteGroupAccordion({
         {testCases.length > 0 && (
           <Box className={classes.routeGroupFooter}>
             <Tooltip title="Run all tests in this group">
-              <span>
+              <Box component="span">
                 <IconButton
                   size="small"
                   className={classes.runAllButton}
@@ -280,7 +276,7 @@ function RouteGroupAccordion({
                 >
                   <PlayArrowIcon fontSize="small" />
                 </IconButton>
-              </span>
+              </Box>
             </Tooltip>
             <Typography variant="caption" color="textSecondary">
               Run all {testCases.length} test
@@ -393,7 +389,9 @@ export function ApiTestingPage() {
   if (loading) {
     return (
       <Page themeId="tool">
-        <Header title="API Testing" />
+        <Header title="API Testing">
+          <HeaderThemeToggle />
+        </Header>
         <Content>
           <Box className={classes.loadingContainer}>
             <CircularProgress />
@@ -406,7 +404,9 @@ export function ApiTestingPage() {
   if (error) {
     return (
       <Page themeId="tool">
-        <Header title="API Testing" />
+        <Header title="API Testing">
+          <HeaderThemeToggle />
+        </Header>
         <Content>
           <Typography className={classes.emptyState}>
             Failed to load test suites: {error?.message}
@@ -418,7 +418,9 @@ export function ApiTestingPage() {
 
   return (
     <Page themeId="tool">
-      <Header title="API Testing" subtitle="All test suites" />
+      <Header title="API Testing" subtitle="All test suites">
+        <HeaderThemeToggle />
+      </Header>
       <Content>
         <ExecutionHistoryContext.Provider value={historyCtxValue}>
           <Box className={classes.root}>
@@ -426,7 +428,9 @@ export function ApiTestingPage() {
               <Typography className={classes.title}>
                 Test Suites
                 <Chip
-                  label={`${routeGroups.length} route group${routeGroups.length !== 1 ? 's' : ''}`}
+                  label={`${routeGroups.length} route group${
+                    routeGroups.length !== 1 ? 's' : ''
+                  }`}
                   size="small"
                   className={classes.badge}
                 />

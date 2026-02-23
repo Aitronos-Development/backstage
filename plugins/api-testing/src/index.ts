@@ -32,6 +32,7 @@ export { ExecutionHistoryContext } from './components/EndpointHistory/ExecutionH
 export type { ExecutionHistoryContextValue } from './components/EndpointHistory/ExecutionHistoryContext';
 export { EnvironmentSwitcher } from './components/EnvironmentSwitcher/EnvironmentSwitcher';
 export { VariableConfigPanel } from './components/VariableConfigPanel/VariableConfigPanel';
+export { FlowStepsPipeline } from './components/FlowStepsPipeline/FlowStepsPipeline';
 
 // Types
 export type {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   makeStyles,
   TableRow,
@@ -32,6 +32,7 @@ import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import TuneIcon from '@material-ui/icons/Tune';
 import { TestResultBadge } from '../TestResultBadge/TestResultBadge';
 import { EndpointHistory } from '../EndpointHistory/EndpointHistory';
+import { FlowStepsPipeline } from '../FlowStepsPipeline/FlowStepsPipeline';
 import type { TestCase, ExecutionResult, TestStatus } from '../../api/types';
 
 const VARIABLE_PATTERN = /\{\{(\w+)\}\}/g;
@@ -224,7 +225,16 @@ export function TestCaseRow({
   const methodClass =
     classes[testCase.method.toLowerCase() as keyof typeof classes] || '';
   const isFlow = testCase.method === 'FLOW';
+  const hasFlowSteps =
+    isFlow && (testCase.flow_metadata?.steps?.length ?? 0) > 0;
   const showDetails = isFlow || (status === 'fail' && (result || error));
+
+  // Auto-expand flow tests when they start running so user sees step animation
+  useEffect(() => {
+    if (hasFlowSteps && status === 'running') {
+      setExpanded(true);
+    }
+  }, [hasFlowSteps, status]);
 
   const usedVariables = useMemo(
     () => extractUsedVariables(testCase),
@@ -366,17 +376,11 @@ export function TestCaseRow({
                     <Typography className={classes.detailLabel} variant="body2">
                       Flow Steps
                     </Typography>
-                    <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {testCase.flow_metadata.steps.map((step, i) => (
-                        <Chip
-                          key={step}
-                          size="small"
-                          label={`${i + 1}. ${step}`}
-                          variant="outlined"
-                          style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
-                        />
-                      ))}
-                    </Box>
+                    <FlowStepsPipeline
+                      steps={testCase.flow_metadata.steps}
+                      status={status}
+                      result={result}
+                    />
                   </Box>
                 )}
                 {error && (

@@ -84,9 +84,7 @@ function ApiListCard({
       <Card>
         <CardHeader title={title} />
         <CardContent>
-          <Typography color="error">
-            Failed to load APIs
-          </Typography>
+          <Typography color="error">Failed to load APIs</Typography>
         </CardContent>
       </Card>
     );

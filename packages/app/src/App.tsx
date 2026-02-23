@@ -47,7 +47,7 @@ import { convertLegacyPlugin } from '@backstage/core-compat-api';
 import { convertLegacyPageExtension } from '@backstage/core-compat-api';
 import { convertLegacyEntityContentExtension } from '@backstage/plugin-catalog-react/alpha';
 import { pluginInfoResolver } from './pluginInfoResolver';
-import { appModuleNav } from './modules/appModuleNav';
+import { appModuleNav, HeaderThemeToggle } from './modules/appModuleNav';
 import { entityExtensionsModule } from './modules/entityExtensions';
 import { googleSignInModule } from './modules/googleSignInPage';
 import devtoolsPlugin from '@backstage/plugin-devtools/alpha';
@@ -118,7 +118,9 @@ const customHomePageModule = createFrontendModule({
           function CustomHomePageLayout() {
             return (
               <Page themeId="home">
-                <Header title={<WelcomeTitle />} pageTitleOverride="Home" />
+                <Header title={<WelcomeTitle />} pageTitleOverride="Home">
+                  <HeaderThemeToggle />
+                </Header>
                 <Content>
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={4}>

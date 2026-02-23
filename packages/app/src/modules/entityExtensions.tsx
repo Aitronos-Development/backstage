@@ -83,6 +83,23 @@ const apiRouteDefinitionContent = EntityContentBlueprint.make({
   },
 });
 
+/**
+ * Flow Testing tab — shows multi-step flow test cases across all route groups.
+ */
+const flowTestContent = EntityContentBlueprint.make({
+  name: 'flow-testing',
+  params: {
+    path: '/flow-testing',
+    title: 'Flow Testing',
+    filter: entity =>
+      (entity.kind === 'Component' &&
+        (entity.spec as any)?.type === 'service') ||
+      entity.kind === 'API',
+    loader: async () =>
+      import('../components/FlowTestContent').then(m => <m.FlowTestContent />),
+  },
+});
+
 export const entityExtensionsModule = createFrontendModule({
   pluginId: 'app',
   extensions: [
@@ -90,5 +107,6 @@ export const entityExtensionsModule = createFrontendModule({
     providedApisSummaryCard,
     consumedApisSummaryCard,
     apiRouteDefinitionContent,
+    flowTestContent,
   ],
 });

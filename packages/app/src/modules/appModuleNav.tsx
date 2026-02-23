@@ -107,28 +107,7 @@ const SidebarLogo = () => {
   );
 };
 
-const useSidebarThemeToggleStyles = makeStyles(theme => ({
-  root: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '4px 0',
-    marginBottom: 4,
-  },
-  button: {
-    color: theme.palette.navigation.color,
-    width: 36,
-    height: 36,
-    transition: 'all 200ms ease',
-    '&:hover': {
-      color: theme.palette.navigation.selectedColor,
-      backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    },
-  },
-}));
-
-const SidebarThemeToggle = () => {
-  const classes = useSidebarThemeToggleStyles();
+export const HeaderThemeToggle = () => {
   const theme = useTheme();
   const appThemeApi = useApi(appThemeApiRef);
   const activeThemeId = useObservable(
@@ -142,25 +121,20 @@ const SidebarThemeToggle = () => {
   };
 
   return (
-    <div className={classes.root}>
-      <Tooltip
-        title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        placement="right"
+    <Tooltip title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+      <IconButton
+        onClick={toggleTheme}
+        size="small"
+        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        style={{ color: 'inherit' }}
       >
-        <IconButton
-          className={classes.button}
-          onClick={toggleTheme}
-          size="small"
-          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          {isDark ? (
-            <WbSunnyIcon fontSize="small" />
-          ) : (
-            <Brightness2Icon fontSize="small" />
-          )}
-        </IconButton>
-      </Tooltip>
-    </div>
+        {isDark ? (
+          <WbSunnyIcon fontSize="small" />
+        ) : (
+          <Brightness2Icon fontSize="small" />
+        )}
+      </IconButton>
+    </Tooltip>
   );
 };
 
@@ -200,7 +174,6 @@ export const appModuleNav = createFrontendModule({
               <SidebarDivider />
               <SidebarSpace />
               <NotificationsSidebarItem />
-              <SidebarThemeToggle />
               <SidebarDivider />
               <SidebarGroup
                 label="Settings"

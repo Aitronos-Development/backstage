@@ -70,13 +70,13 @@ Motion occurs within a single environment. Objects are presented without breakin
 
 The M3 color system is built around **five key colors**, each relating to a tonal palette of 13 tones:
 
-| Role       | Purpose                                                         |
-| ---------- | --------------------------------------------------------------- |
-| Primary    | Main components: prominent buttons, active states, FABs         |
-| Secondary  | Less prominent components: filter chips, secondary actions      |
-| Tertiary   | Contrasting accents that balance primary and secondary colors   |
-| Error      | Error states, destructive actions, validation failures          |
-| Neutral    | Surfaces, backgrounds, text, outlines                           |
+| Role      | Purpose                                                       |
+| --------- | ------------------------------------------------------------- |
+| Primary   | Main components: prominent buttons, active states, FABs       |
+| Secondary | Less prominent components: filter chips, secondary actions    |
+| Tertiary  | Contrasting accents that balance primary and secondary colors |
+| Error     | Error states, destructive actions, validation failures        |
+| Neutral   | Surfaces, backgrounds, text, outlines                         |
 
 #### Dynamic Color
 
@@ -99,13 +99,13 @@ Material 3's standout feature. The system:
 
 M3 defines a **type scale** with five categories, each available in three sizes:
 
-| Category | Sizes              | Usage                                            |
-| -------- | ------------------ | ------------------------------------------------ |
-| Display  | Large, Medium, Small | Hero text, prominent numbers                   |
-| Headline | Large, Medium, Small | Section headers, prominent content labels      |
-| Title    | Large, Medium, Small | Subsections, card titles, dialog titles        |
+| Category | Sizes                | Usage                                           |
+| -------- | -------------------- | ----------------------------------------------- |
+| Display  | Large, Medium, Small | Hero text, prominent numbers                    |
+| Headline | Large, Medium, Small | Section headers, prominent content labels       |
+| Title    | Large, Medium, Small | Subsections, card titles, dialog titles         |
 | Body     | Large, Medium, Small | Paragraph text, descriptions, long-form content |
-| Label    | Large, Medium, Small | Buttons, tabs, chips, captions                 |
+| Label    | Large, Medium, Small | Buttons, tabs, chips, captions                  |
 
 - Default typeface: **Google Sans** (Display, Headline) and **Google Sans Text** (Body, Label).
 - Scalable type systems adapt seamlessly across phones, tablets, and desktops.
@@ -120,13 +120,13 @@ M3 defines a **type scale** with five categories, each available in three sizes:
 
 Shapes in M3 express brand identity and provide visual variety. The shape system defines **five roundedness levels**:
 
-| Level        | Corner Radius | Usage Examples                       |
-| ------------ | ------------- | ------------------------------------ |
-| Extra Small  | 4dp           | Small components, chips              |
-| Small        | 8dp           | Buttons, text fields                 |
-| Medium       | 12dp          | Cards, dialogs                       |
-| Large        | 16dp          | Large cards, navigation drawers      |
-| Extra Large  | 28dp          | Bottom sheets, FABs                  |
+| Level       | Corner Radius | Usage Examples                  |
+| ----------- | ------------- | ------------------------------- |
+| Extra Small | 4dp           | Small components, chips         |
+| Small       | 8dp           | Buttons, text fields            |
+| Medium      | 12dp          | Cards, dialogs                  |
+| Large       | 16dp          | Large cards, navigation drawers |
+| Extra Large | 28dp          | Bottom sheets, FABs             |
 
 - Full (fully round) and None (no rounding) are also available.
 
@@ -141,14 +141,14 @@ Shapes in M3 express brand identity and provide visual variety. The shape system
 
 Elevation establishes visual hierarchy and depth along the z-axis:
 
-| Level | Shadow Depth | Usage                                  |
-| ----- | ------------ | -------------------------------------- |
-| 0     | 0dp          | Base surface level                     |
-| 1     | 1dp          | Cards, app bars at rest                |
-| 2     | 3dp          | Raised buttons, snackbars              |
-| 3     | 6dp          | FABs, bottom app bar                   |
-| 4     | 8dp          | Bottom sheets, navigation drawers      |
-| 5     | 12dp         | Dialogs, modals                        |
+| Level | Shadow Depth | Usage                             |
+| ----- | ------------ | --------------------------------- |
+| 0     | 0dp          | Base surface level                |
+| 1     | 1dp          | Cards, app bars at rest           |
+| 2     | 3dp          | Raised buttons, snackbars         |
+| 3     | 6dp          | FABs, bottom app bar              |
+| 4     | 8dp          | Bottom sheets, navigation drawers |
+| 5     | 12dp         | Dialogs, modals                   |
 
 - M3 uses **tonal elevation** in addition to shadows — surfaces change tone rather than adding shadows to indicate elevation.
 - Tonal surfaces are more accessible and work better in dark themes.
@@ -298,14 +298,14 @@ Material Design treats accessibility as a first-class concern:
 
 Material Design provides implementations for:
 
-| Platform   | Library                    | Language      |
-| ---------- | -------------------------- | ------------- |
-| Android    | Jetpack Compose Material 3 | Kotlin        |
-| Android    | MDC-Android                | XML / Java    |
-| Flutter    | Flutter Material           | Dart          |
-| Web        | MUI (Material UI)          | React / JS    |
-| Web        | Material Web Components    | Web Components|
-| iOS        | Material Components iOS    | Swift         |
+| Platform | Library                    | Language       |
+| -------- | -------------------------- | -------------- |
+| Android  | Jetpack Compose Material 3 | Kotlin         |
+| Android  | MDC-Android                | XML / Java     |
+| Flutter  | Flutter Material           | Dart           |
+| Web      | MUI (Material UI)          | React / JS     |
+| Web      | Material Web Components    | Web Components |
+| iOS      | Material Components iOS    | Swift          |
 
 ---
 

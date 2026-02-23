@@ -240,11 +240,12 @@ function RouteGroupAccordion({ group }: { group: RouteGroup }) {
   };
 
   return (
-    <Accordion className={classes.routeAccordion} TransitionProps={{ unmountOnExit: true }}>
+    <Accordion
+      className={classes.routeAccordion}
+      TransitionProps={{ unmountOnExit: true }}
+    >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography className={classes.routeSummary}>
-          {group.prefix}
-        </Typography>
+        <Typography className={classes.routeSummary}>{group.prefix}</Typography>
         <Chip
           label={`${group.endpoints.length} endpoints`}
           size="small"
@@ -253,7 +254,10 @@ function RouteGroupAccordion({ group }: { group: RouteGroup }) {
       </AccordionSummary>
       <AccordionDetails style={{ display: 'block', paddingTop: 0 }}>
         {group.endpoints.map((ep, i) => (
-          <Box key={`${ep.method}-${ep.path}-${i}`} className={classes.endpointRow}>
+          <Box
+            key={`${ep.method}-${ep.path}-${i}`}
+            className={classes.endpointRow}
+          >
             <Chip
               label={ep.method}
               size="small"
@@ -273,19 +277,15 @@ function RouteGroupAccordion({ group }: { group: RouteGroup }) {
 export function CollapsibleApiContent() {
   const { entity } = useEntity();
 
-  const {
-    entities: providedApis,
-    loading: loadingProvided,
-  } = useRelatedEntities(entity, {
-    type: RELATION_PROVIDES_API,
-  });
+  const { entities: providedApis, loading: loadingProvided } =
+    useRelatedEntities(entity, {
+      type: RELATION_PROVIDES_API,
+    });
 
-  const {
-    entities: consumedApis,
-    loading: loadingConsumed,
-  } = useRelatedEntities(entity, {
-    type: RELATION_CONSUMES_API,
-  });
+  const { entities: consumedApis, loading: loadingConsumed } =
+    useRelatedEntities(entity, {
+      type: RELATION_CONSUMES_API,
+    });
 
   return (
     <Box>

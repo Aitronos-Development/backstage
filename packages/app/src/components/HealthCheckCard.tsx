@@ -172,13 +172,19 @@ export function HealthCheckCard() {
       <CardHeader title="Health" />
       <CardContent>
         <div
-          className={`${classes.overallBanner} ${overall ? classes.bannerUp : classes.bannerDown}`}
+          className={`${classes.overallBanner} ${
+            overall ? classes.bannerUp : classes.bannerDown
+          }`}
         >
           <span
-            className={`${classes.light} ${overall ? classes.lightUp : classes.lightDown}`}
+            className={`${classes.light} ${
+              overall ? classes.lightUp : classes.lightDown
+            }`}
           />
           <Typography className={overall ? classes.up : classes.down}>
-            {overall ? 'Up — Service is healthy' : 'Down — Service is unhealthy'}
+            {overall
+              ? 'Up — Service is healthy'
+              : 'Down — Service is unhealthy'}
           </Typography>
         </div>
         <Table size="small">
@@ -198,7 +204,9 @@ export function HealthCheckCard() {
                   <TableCell>
                     <div className={classes.statusCell}>
                       <span
-                        className={`${classes.light} ${componentUp ? classes.lightUp : classes.lightDown}`}
+                        className={`${classes.light} ${
+                          componentUp ? classes.lightUp : classes.lightDown
+                        }`}
                       />
                       <span className={componentUp ? classes.up : classes.down}>
                         {componentUp ? 'Up' : 'Down'}

@@ -45,7 +45,11 @@ import {
   VariableConfigPanel,
   ExecutionHistoryContext,
 } from '@internal/plugin-api-testing';
-import type { TestCase, TestStatus, ExecutionRecord } from '@internal/plugin-api-testing';
+import type {
+  TestCase,
+  TestStatus,
+  ExecutionRecord,
+} from '@internal/plugin-api-testing';
 
 const MONO_FONT =
   '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", monospace';
@@ -168,7 +172,6 @@ const useStyles = makeStyles(theme => ({
   put: { backgroundColor: '#fca130', color: '#fff' },
   delete: { backgroundColor: '#f93e3e', color: '#fff' },
   patch: { backgroundColor: '#50e3c2', color: '#fff' },
-  flow: { backgroundColor: '#9c27b0', color: '#fff' },
   default: { backgroundColor: theme.palette.grey[500], color: '#fff' },
   pathText: {
     fontFamily: MONO_FONT,
@@ -287,19 +290,6 @@ const useStyles = makeStyles(theme => ({
   accordionDetails: {
     display: 'block',
     padding: theme.spacing(0, 2, 2, 2),
-  },
-
-  /* ---- Section headers ---- */
-  sectionHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(1),
-    marginBottom: theme.spacing(1),
-    paddingTop: theme.spacing(1.5),
-  },
-  sectionTitle: {
-    fontWeight: 600,
-    fontSize: '0.85rem',
   },
 
   /* ---- Unmatched / empty ---- */
@@ -437,7 +427,8 @@ function EndpointWithTests({
   const hasTests = testCases.length > 0;
 
   const endpointStatus = useMemo(
-    () => (hasTests ? getStatusForTests(testCases, execution.getState) : 'neutral'),
+    () =>
+      hasTests ? getStatusForTests(testCases, execution.getState) : 'neutral',
     [testCases, execution, hasTests],
   );
 
@@ -451,29 +442,42 @@ function EndpointWithTests({
   return (
     <>
       <Box
-        className={`${classes.endpointRow} ${hasTests ? classes.endpointRowClickable : ''}`}
+        className={`${classes.endpointRow} ${
+          hasTests ? classes.endpointRowClickable : ''
+        }`}
         onClick={hasTests ? () => setExpanded(prev => !prev) : undefined}
       >
         <Chip
           label={endpoint.method}
           size="small"
-          className={`${classes.methodChip} ${methodColorClass(endpoint.method)}`}
+          className={`${classes.methodChip} ${methodColorClass(
+            endpoint.method,
+          )}`}
         />
         <Typography className={classes.pathText}>{endpoint.path}</Typography>
         {endpoint.summary && (
-          <Typography className={classes.summary}>{endpoint.summary}</Typography>
+          <Typography className={classes.summary}>
+            {endpoint.summary}
+          </Typography>
         )}
         {hasTests && (
           <>
-            <span className={`${classes.statusDot} ${statusDotClass}`} />
+            <Typography
+              component="span"
+              className={`${classes.statusDot} ${statusDotClass}`}
+            />
             <Chip
-              label={`${testCases.length} test${testCases.length !== 1 ? 's' : ''}`}
+              label={`${testCases.length} test${
+                testCases.length !== 1 ? 's' : ''
+              }`}
               size="small"
               variant="outlined"
               className={classes.testCountBadge}
             />
             <ExpandMoreIcon
-              className={`${classes.expandIcon} ${expanded ? classes.expandIconOpen : ''}`}
+              className={`${classes.expandIcon} ${
+                expanded ? classes.expandIconOpen : ''
+              }`}
             />
           </>
         )}
@@ -495,7 +499,10 @@ function EndpointWithTests({
                 {testCases.map(tc => {
                   const state = execution.getState(tc.id);
                   const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-                  const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
+                  const tcMerged = {
+                    ...variablesCtx.mergedVariables,
+                    ...tcRuntime,
+                  };
                   return (
                     <TestCaseRow
                       key={tc.id}
@@ -539,7 +546,11 @@ interface RouteGroupAccordionProps {
   variablesCtx: VariablesContext;
 }
 
-function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAccordionProps) {
+function RouteGroupAccordion({
+  group,
+  refreshKey,
+  variablesCtx,
+}: RouteGroupAccordionProps) {
   const classes = useStyles();
   const { testCases, loading, refresh } = useTestCases(group.prefix);
   const execution = useTestExecution();
@@ -550,22 +561,6 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
     prevRefreshKeyRef.current = refreshKey;
     refresh();
   }
-
-  const overallStatus: OverallStatus = useMemo(() => {
-    if (loading) return 'neutral';
-    const statuses = testCases.map(tc => execution.getState(tc.id).status);
-    if (statuses.some(s => s === 'running') || runningAll) return 'running';
-    if (statuses.some(s => s === 'fail')) return 'fail';
-    if (statuses.length > 0 && statuses.every(s => s === 'pass')) return 'pass';
-    return 'neutral';
-  }, [testCases, execution, runningAll, loading]);
-
-  const statusDotClass = {
-    neutral: classes.statusNeutral,
-    pass: classes.statusPass,
-    fail: classes.statusFail,
-    running: classes.statusRunning,
-  }[overallStatus];
 
   /** Map each endpoint to its matching test cases by normalized method+path */
   const testsByEndpoint = useMemo(() => {
@@ -585,12 +580,11 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
       }
     }
 
-    // Separate unmatched into flow tests and other endpoint tests
-    const unmatchedAll = testCases.filter(tc => !matched.has(tc.id));
-    const flowTests = unmatchedAll.filter(tc => tc.method === 'FLOW');
-    const unmatched = unmatchedAll.filter(tc => tc.method !== 'FLOW');
+    const unmatched = testCases.filter(
+      tc => !matched.has(tc.id) && tc.method !== 'FLOW',
+    );
 
-    return { map, unmatched, flowTests };
+    return { map, unmatched };
   }, [group.endpoints, testCases]);
 
   const methodColorClass = (method: string): string => {
@@ -599,11 +593,32 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
     return classes.default;
   };
 
+  const endpointTests = useMemo(
+    () => testCases.filter(tc => tc.method !== 'FLOW'),
+    [testCases],
+  );
+
+  const overallStatus: OverallStatus = useMemo(() => {
+    if (loading) return 'neutral';
+    const statuses = endpointTests.map(tc => execution.getState(tc.id).status);
+    if (statuses.some(s => s === 'running') || runningAll) return 'running';
+    if (statuses.some(s => s === 'fail')) return 'fail';
+    if (statuses.length > 0 && statuses.every(s => s === 'pass')) return 'pass';
+    return 'neutral';
+  }, [endpointTests, execution, runningAll, loading]);
+
+  const statusDotClass = {
+    neutral: classes.statusNeutral,
+    pass: classes.statusPass,
+    fail: classes.statusFail,
+    running: classes.statusRunning,
+  }[overallStatus];
+
   const handleRunAll = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       setRunningAll(true);
-      for (const tc of testCases) {
+      for (const tc of endpointTests) {
         const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
         const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
         await execution.execute(
@@ -615,7 +630,7 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
       }
       setRunningAll(false);
     },
-    [testCases, group.prefix, execution, variablesCtx],
+    [endpointTests, group.prefix, execution, variablesCtx],
   );
 
   return (
@@ -627,27 +642,27 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
         expandIcon={<ExpandMoreIcon />}
         className={classes.routeSummary}
       >
-        <span className={`${classes.statusIndicator} ${statusDotClass}`} />
+        <Typography
+          component="span"
+          className={`${classes.statusIndicator} ${statusDotClass}`}
+        />
         <Typography className={classes.routePrefix}>{group.prefix}</Typography>
         <Chip
-          label={`${group.endpoints.length} endpoint${group.endpoints.length !== 1 ? 's' : ''}`}
+          label={`${group.endpoints.length} endpoint${
+            group.endpoints.length !== 1 ? 's' : ''
+          }`}
           size="small"
           variant="outlined"
           className={classes.countChip}
         />
-        {testCases.length > 0 && (
+        {endpointTests.length > 0 && (
           <Chip
-            label={`${testCases.length} test${testCases.length !== 1 ? 's' : ''}`}
+            label={`${endpointTests.length} test${
+              endpointTests.length !== 1 ? 's' : ''
+            }`}
             size="small"
             variant="outlined"
             className={classes.countChip}
-          />
-        )}
-        {testsByEndpoint.flowTests.length > 0 && (
-          <Chip
-            label={`${testsByEndpoint.flowTests.length} flow${testsByEndpoint.flowTests.length !== 1 ? 's' : ''}`}
-            size="small"
-            className={`${classes.countChip} ${classes.flow}`}
           />
         )}
       </AccordionSummary>
@@ -668,71 +683,6 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
             />
           );
         })}
-        {testsByEndpoint.flowTests.length > 0 && (
-          <Box>
-            <Box className={classes.sectionHeader}>
-              <Chip
-                label="FLOW"
-                size="small"
-                className={`${classes.methodChip} ${classes.flow}`}
-              />
-              <Typography className={classes.sectionTitle}>
-                Flow Tests
-              </Typography>
-              <Chip
-                label={`${testsByEndpoint.flowTests.length} flow${testsByEndpoint.flowTests.length !== 1 ? 's' : ''}`}
-                size="small"
-                variant="outlined"
-                className={classes.countChip}
-              />
-            </Box>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>File</TableCell>
-                  <TableCell>Result</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {testsByEndpoint.flowTests.map(tc => {
-                  const state = execution.getState(tc.id);
-                  const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-                  const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
-                  return (
-                    <TestCaseRow
-                      key={tc.id}
-                      testCase={tc}
-                      routeGroup={group.prefix}
-                      status={state.status}
-                      result={state.result}
-                      error={state.error}
-                      onExecute={() =>
-                        execution.execute(
-                          tc.id,
-                          group.prefix,
-                          tcMerged,
-                          variablesCtx.activeEnvironment,
-                        )
-                      }
-                      onStop={() => execution.stop(tc.id)}
-                      runtimeOverrides={tcRuntime}
-                      onSetRuntimeOverride={(key, value) =>
-                        variablesCtx.setRuntimeOverride(tc.id, key, value)
-                      }
-                      onRemoveRuntimeOverride={key =>
-                        variablesCtx.removeRuntimeOverride(tc.id, key)
-                      }
-                      mergedVariables={variablesCtx.mergedVariables}
-                    />
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Box>
-        )}
         {testsByEndpoint.unmatched.length > 0 && (
           <Box className={classes.unmatchedSection}>
             <Typography className={classes.unmatchedTitle}>
@@ -743,7 +693,10 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
                 {testsByEndpoint.unmatched.map(tc => {
                   const state = execution.getState(tc.id);
                   const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-                  const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
+                  const tcMerged = {
+                    ...variablesCtx.mergedVariables,
+                    ...tcRuntime,
+                  };
                   return (
                     <TestCaseRow
                       key={tc.id}
@@ -776,7 +729,7 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
             </Table>
           </Box>
         )}
-        {testCases.length > 0 && (
+        {endpointTests.length > 0 && (
           <Box className={classes.routeGroupFooter}>
             <Button
               variant="outlined"
@@ -786,7 +739,8 @@ function RouteGroupAccordion({ group, refreshKey, variablesCtx }: RouteGroupAcco
               disabled={runningAll || loading}
               startIcon={<PlayArrowIcon style={{ fontSize: 16 }} />}
             >
-              Run all {testCases.length} test{testCases.length !== 1 ? 's' : ''}
+              Run all {endpointTests.length} test
+              {endpointTests.length !== 1 ? 's' : ''}
             </Button>
           </Box>
         )}
@@ -816,17 +770,19 @@ function TestOnlyRouteGroupAccordion({
     refresh();
   }
 
-  const flowTests = useMemo(() => testCases.filter(tc => tc.method === 'FLOW'), [testCases]);
-  const endpointTests = useMemo(() => testCases.filter(tc => tc.method !== 'FLOW'), [testCases]);
+  const endpointTests = useMemo(
+    () => testCases.filter(tc => tc.method !== 'FLOW'),
+    [testCases],
+  );
 
   const overallStatus: OverallStatus = useMemo(() => {
     if (loading) return 'neutral';
-    const statuses = testCases.map(tc => execution.getState(tc.id).status);
+    const statuses = endpointTests.map(tc => execution.getState(tc.id).status);
     if (statuses.some(s => s === 'running') || runningAll) return 'running';
     if (statuses.some(s => s === 'fail')) return 'fail';
     if (statuses.length > 0 && statuses.every(s => s === 'pass')) return 'pass';
     return 'neutral';
-  }, [testCases, execution, runningAll, loading]);
+  }, [endpointTests, execution, runningAll, loading]);
 
   const statusDotClass = {
     neutral: classes.statusNeutral,
@@ -839,7 +795,7 @@ function TestOnlyRouteGroupAccordion({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       setRunningAll(true);
-      for (const tc of testCases) {
+      for (const tc of endpointTests) {
         const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
         const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
         await execution.execute(
@@ -851,67 +807,10 @@ function TestOnlyRouteGroupAccordion({
       }
       setRunningAll(false);
     },
-    [testCases, routeGroup, execution, variablesCtx],
+    [endpointTests, routeGroup, execution, variablesCtx],
   );
 
-  if (!loading && testCases.length === 0) return null;
-
-  const renderTestTable = (tests: TestCase[], header?: string) => (
-    <Box style={{ paddingTop: header ? 8 : 0 }}>
-      {header && (
-        <Box className={classes.sectionHeader}>
-          {header === 'Flow Tests' && (
-            <Chip
-              label="FLOW"
-              size="small"
-              className={`${classes.methodChip} ${classes.flow}`}
-            />
-          )}
-          <Typography className={classes.sectionTitle}>{header}</Typography>
-        </Box>
-      )}
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Type</TableCell>
-            <TableCell>Name</TableCell>
-            <TableCell>{header === 'Flow Tests' ? 'File' : 'Path'}</TableCell>
-            <TableCell>Result</TableCell>
-            <TableCell align="right">Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {tests.map(tc => {
-            const state = execution.getState(tc.id);
-            const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-            const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
-            return (
-              <TestCaseRow
-                key={tc.id}
-                testCase={tc}
-                routeGroup={routeGroup}
-                status={state.status}
-                result={state.result}
-                error={state.error}
-                onExecute={() =>
-                  execution.execute(tc.id, routeGroup, tcMerged, variablesCtx.activeEnvironment)
-                }
-                onStop={() => execution.stop(tc.id)}
-                runtimeOverrides={tcRuntime}
-                onSetRuntimeOverride={(key, value) =>
-                  variablesCtx.setRuntimeOverride(tc.id, key, value)
-                }
-                onRemoveRuntimeOverride={key =>
-                  variablesCtx.removeRuntimeOverride(tc.id, key)
-                }
-                mergedVariables={variablesCtx.mergedVariables}
-              />
-            );
-          })}
-        </TableBody>
-      </Table>
-    </Box>
-  );
+  if (!loading && endpointTests.length === 0) return null;
 
   return (
     <Accordion
@@ -922,27 +821,71 @@ function TestOnlyRouteGroupAccordion({
         expandIcon={<ExpandMoreIcon />}
         className={classes.routeSummary}
       >
-        <span className={`${classes.statusIndicator} ${statusDotClass}`} />
+        <Typography
+          component="span"
+          className={`${classes.statusIndicator} ${statusDotClass}`}
+        />
         <Typography className={classes.routePrefix}>{routeGroup}</Typography>
         <Chip
-          label={`${testCases.length} test${testCases.length !== 1 ? 's' : ''}`}
+          label={`${endpointTests.length} test${
+            endpointTests.length !== 1 ? 's' : ''
+          }`}
           size="small"
           variant="outlined"
           className={classes.countChip}
         />
-        {flowTests.length > 0 && (
-          <Chip
-            label={`${flowTests.length} flow${flowTests.length !== 1 ? 's' : ''}`}
-            size="small"
-            className={`${classes.countChip} ${classes.flow}`}
-          />
-        )}
       </AccordionSummary>
       <AccordionDetails className={classes.accordionDetails}>
         {loading && <LinearProgress />}
-        {flowTests.length > 0 && renderTestTable(flowTests, 'Flow Tests')}
-        {endpointTests.length > 0 && renderTestTable(endpointTests, flowTests.length > 0 ? 'Endpoint Tests' : undefined)}
-        {testCases.length > 0 && (
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Type</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Path</TableCell>
+              <TableCell>Result</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {endpointTests.map(tc => {
+              const state = execution.getState(tc.id);
+              const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
+              const tcMerged = {
+                ...variablesCtx.mergedVariables,
+                ...tcRuntime,
+              };
+              return (
+                <TestCaseRow
+                  key={tc.id}
+                  testCase={tc}
+                  routeGroup={routeGroup}
+                  status={state.status}
+                  result={state.result}
+                  error={state.error}
+                  onExecute={() =>
+                    execution.execute(
+                      tc.id,
+                      routeGroup,
+                      tcMerged,
+                      variablesCtx.activeEnvironment,
+                    )
+                  }
+                  onStop={() => execution.stop(tc.id)}
+                  runtimeOverrides={tcRuntime}
+                  onSetRuntimeOverride={(key, value) =>
+                    variablesCtx.setRuntimeOverride(tc.id, key, value)
+                  }
+                  onRemoveRuntimeOverride={key =>
+                    variablesCtx.removeRuntimeOverride(tc.id, key)
+                  }
+                  mergedVariables={variablesCtx.mergedVariables}
+                />
+              );
+            })}
+          </TableBody>
+        </Table>
+        {endpointTests.length > 0 && (
           <Box className={classes.routeGroupFooter}>
             <Button
               variant="outlined"
@@ -952,7 +895,8 @@ function TestOnlyRouteGroupAccordion({
               disabled={runningAll || loading}
               startIcon={<PlayArrowIcon style={{ fontSize: 16 }} />}
             >
-              Run all {testCases.length} test{testCases.length !== 1 ? 's' : ''}
+              Run all {endpointTests.length} test
+              {endpointTests.length !== 1 ? 's' : ''}
             </Button>
           </Box>
         )}
@@ -969,16 +913,19 @@ export function ApiRouteDefinitionContent() {
 
   // Fetch the OpenAPI spec: from entity definition (API entities) or
   // from the live Freddy backend via proxy (Component entities).
-  const entityDefinition = entity.kind === 'API'
-    ? (entity.spec as any)?.definition
-    : undefined;
+  const entityDefinition =
+    entity.kind === 'API' ? (entity.spec as any)?.definition : undefined;
 
-  const [fetchedDefinition, setFetchedDefinition] = useState<string | null>(null);
+  const [fetchedDefinition, setFetchedDefinition] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (entityDefinition) return; // Already have it from the entity
     fetch(`${backendUrl}/api/proxy/freddy-api/openapi.json`)
-      .then(res => res.ok ? res.text() : Promise.reject(new Error(`${res.status}`)))
+      .then(res =>
+        res.ok ? res.text() : Promise.reject(new Error(`${res.status}`)),
+      )
       .then(text => setFetchedDefinition(text))
       .catch(() => setFetchedDefinition(null));
   }, [entityDefinition, backendUrl]);
@@ -1108,7 +1055,8 @@ export function ApiRouteDefinitionContent() {
             No API definition found
           </Typography>
           <Typography className={classes.emptySubtitle}>
-            Attach an OpenAPI spec to this entity to see API routes and run tests.
+            Attach an OpenAPI spec to this entity to see API routes and run
+            tests.
           </Typography>
         </Box>
       </Box>
@@ -1145,7 +1093,9 @@ export function ApiRouteDefinitionContent() {
             />
             {totalEndpoints > 0 && (
               <Chip
-                label={`${totalEndpoints} endpoint${totalEndpoints !== 1 ? 's' : ''}`}
+                label={`${totalEndpoints} endpoint${
+                  totalEndpoints !== 1 ? 's' : ''
+                }`}
                 size="small"
                 variant="outlined"
                 className={classes.countChip}
