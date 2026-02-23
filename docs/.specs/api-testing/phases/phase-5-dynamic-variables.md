@@ -53,8 +53,8 @@ apiTesting:
     production:
       baseUrl: https://api.example.com
       variables:
-        auth_token: ""
-        org_id: ""
+        auth_token: ''
+        org_id: ''
 ```
 
 The backend reads this via Backstage's `config` API (`config.getConfig('apiTesting')`). The selected environment determines which set of variables is active.
@@ -89,8 +89,8 @@ A shared utility used by both the backend (user executions) and the MCP server (
 ```typescript
 function resolveVariables(
   template: string | object,
-  context: VariableContext
-): string | object
+  context: VariableContext,
+): string | object;
 ```
 
 - Recursively walks the object
@@ -127,10 +127,12 @@ Opened via a **"Variables (N)"** button in the page header (next to the environm
 The modal is a clean, minimal dialog (`maxWidth="sm"`, `borderRadius: 12`) with three sections:
 
 **Header:**
+
 - Title "Variables" with the active environment shown as an outlined chip (e.g. `develop`)
 - Close (X) button on the right
 
 **Variable list:**
+
 - Each variable is a horizontal row: **key** (monospace, bold, fixed width) → **value** (filled gray background, rounded, monospace) → **source chip** → **action icons**
 - Clicking a value opens inline editing using a borderless `InputBase` with save (check) / cancel (X) icons
 - Source chips use subtle, theme-aware colors: `config` (blue), `local` (orange), `runtime` (green)
@@ -139,15 +141,18 @@ The modal is a clean, minimal dialog (`maxWidth="sm"`, `borderRadius: 12`) with 
 - Empty state: centered text prompting the user to add a variable or configure `app-config.yaml`
 
 **"Add new variable" form:**
+
 - Separated from the list by a divider with a section title
 - Form layout: label on the left (`Name`, `Value`), filled `InputBase` on the right (gray background, rounded corners, monospace)
 - "Add" button aligned to the right, `disableElevation`, contained primary style
 - Enter key submits, Escape cancels
 
 **Footer:**
+
 - "Done" button to close the modal
 
 Design principles:
+
 - Uses `InputBase` instead of `TextField` — no outlined borders, clean filled backgrounds
 - All inputs use monospace font for consistency with variable names/values
 - Dark-mode aware: backgrounds use `rgba()` opacity layers instead of hard-coded palette colors
@@ -207,9 +212,9 @@ A fully functional, zero-latency variable system that supports team-level defaul
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| Circular variable references (`{{a}}` → `{{b}}` → `{{a}}`) | Infinite loop | Detect cycles, limit recursion depth to 5, throw descriptive error |
-| Secrets in localStorage | Security concern | Document that localStorage is browser-local and clearable; never sync to backend |
-| app-config changes require restart | Developer friction | Backstage hot-reloads config on change in dev mode; document this |
-| Agent doesn't have access to user's localStorage variables | Tests may fail for agent | Agent must provide its own tokens via `variable_overrides`; document this |
+| Risk                                                       | Impact                   | Mitigation                                                                       |
+| ---------------------------------------------------------- | ------------------------ | -------------------------------------------------------------------------------- |
+| Circular variable references (`{{a}}` → `{{b}}` → `{{a}}`) | Infinite loop            | Detect cycles, limit recursion depth to 5, throw descriptive error               |
+| Secrets in localStorage                                    | Security concern         | Document that localStorage is browser-local and clearable; never sync to backend |
+| app-config changes require restart                         | Developer friction       | Backstage hot-reloads config on change in dev mode; document this                |
+| Agent doesn't have access to user's localStorage variables | Tests may fail for agent | Agent must provide its own tokens via `variable_overrides`; document this        |

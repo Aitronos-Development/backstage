@@ -21,7 +21,6 @@ import {
   SidebarDivider,
   SidebarGroup,
   SidebarItem,
-  SidebarScrollWrapper,
   SidebarSpace,
   useSidebarOpenState,
 } from '@backstage/core-components';
@@ -136,8 +135,7 @@ const SidebarThemeToggle = () => {
     appThemeApi.activeThemeId$(),
     appThemeApi.getActiveThemeId(),
   );
-  const isDark =
-    activeThemeId === 'dark' || theme.palette.type === 'dark';
+  const isDark = activeThemeId === 'dark' || theme.palette.type === 'dark';
 
   const toggleTheme = () => {
     appThemeApi.setActiveThemeId(isDark ? 'light' : 'dark');
@@ -145,7 +143,10 @@ const SidebarThemeToggle = () => {
 
   return (
     <div className={classes.root}>
-      <Tooltip title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'} placement="right">
+      <Tooltip
+        title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        placement="right"
+      >
         <IconButton
           className={classes.button}
           onClick={toggleTheme}
@@ -189,11 +190,7 @@ export const appModuleNav = createFrontendModule({
               <SidebarGroup label="Menu" icon={<MenuIcon />}>
                 <SidebarItem icon={HomeIcon} to="/home" text="Home" />
                 <SidebarItem icon={CategoryIcon} to="catalog" text="Catalog" />
-                <SidebarItem
-                  icon={LibraryBooksIcon}
-                  to="docs"
-                  text="Docs"
-                />
+                <SidebarItem icon={LibraryBooksIcon} to="docs" text="Docs" />
                 <SidebarItem
                   icon={PlaylistPlayIcon}
                   to="api-testing"

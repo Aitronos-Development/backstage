@@ -46,6 +46,6 @@ A blank but functional Backstage instance, ready to register Freddy.
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
+| Risk                         | Impact      | Mitigation                                                |
+| ---------------------------- | ----------- | --------------------------------------------------------- |
 | Node version incompatibility | Build fails | Backstage supports Node 18+, we have v22 — should be fine |

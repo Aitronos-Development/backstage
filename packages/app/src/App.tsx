@@ -20,9 +20,7 @@ import userSettingsPlugin from '@backstage/plugin-user-settings/alpha';
 import homePlugin from '@backstage/plugin-home/alpha';
 
 import { createFrontendModule } from '@backstage/frontend-plugin-api';
-import {
-  HomePageLayoutBlueprint,
-} from '@backstage/plugin-home-react/alpha';
+import { HomePageLayoutBlueprint } from '@backstage/plugin-home-react/alpha';
 import { Content, Header, Page } from '@backstage/core-components';
 import {
   WelcomeTitle,
@@ -120,10 +118,7 @@ const customHomePageModule = createFrontendModule({
           function CustomHomePageLayout() {
             return (
               <Page themeId="home">
-                <Header
-                  title={<WelcomeTitle />}
-                  pageTitleOverride="Home"
-                />
+                <Header title={<WelcomeTitle />} pageTitleOverride="Home" />
                 <Content>
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={4}>
@@ -148,7 +143,7 @@ const customizedCatalog = catalogPlugin.withOverrides({
     catalogPlugin.getExtension('entity-content:catalog/overview').override({
       params: {
         icon: <InfoIcon />,
-        filter: entity => entity.kind !== 'API',
+        filter: _entity => true,
       },
     }),
   ],

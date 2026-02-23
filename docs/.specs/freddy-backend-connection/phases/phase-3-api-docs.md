@@ -78,7 +78,7 @@ freddy-service (Overview tab)
     params: {
       filter: entity => entity.kind !== 'API',
     },
-  })
+  });
   ```
 - This hides the Overview tab when viewing API entities, so users land on the Definition tab
 
@@ -92,13 +92,13 @@ Each parent route expands to reveal its individual endpoints with method, path, 
 
 ## Files changed
 
-| File | Change |
-|------|--------|
-| `packages/app/src/components/ApiRouteDefinitionContent.tsx` | New — collapsible route view for API Definition tab |
-| `packages/app/src/components/ApiSummaryCards.tsx` | Links navigate to `/definition` instead of entity root |
-| `packages/app/src/modules/entityExtensions.tsx` | Registered `api-route-definition` EntityContentBlueprint |
-| `packages/app/app-config.yaml` | Disabled `api-docs/definition`, enabled `app/api-route-definition` |
-| `packages/app/src/App.tsx` | Hidden Overview tab for API entities via filter |
+| File                                                        | Change                                                             |
+| ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| `packages/app/src/components/ApiRouteDefinitionContent.tsx` | New — collapsible route view for API Definition tab                |
+| `packages/app/src/components/ApiSummaryCards.tsx`           | Links navigate to `/definition` instead of entity root             |
+| `packages/app/src/modules/entityExtensions.tsx`             | Registered `api-route-definition` EntityContentBlueprint           |
+| `packages/app/app-config.yaml`                              | Disabled `api-docs/definition`, enabled `app/api-route-definition` |
+| `packages/app/src/App.tsx`                                  | Hidden Overview tab for API entities via filter                    |
 
 ## What comes out of this phase
 
@@ -106,8 +106,8 @@ A developer can click an API from Freddy's service page and land on a clean Defi
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| OpenAPI definition stored as YAML instead of JSON | `JSON.parse` fails, no routes shown | Add YAML parsing fallback if needed |
+| Risk                                              | Impact                                  | Mitigation                                                                                  |
+| ------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| OpenAPI definition stored as YAML instead of JSON | `JSON.parse` fails, no routes shown     | Add YAML parsing fallback if needed                                                         |
 | Route prefix grouping doesn't match expected tags | Groups look different from FastAPI tags | Grouping uses first two path segments — works for RESTful APIs with `/v1/resource` patterns |
-| Large number of endpoints in a single group | Accordion content gets long | Endpoints are lightweight DOM elements — no performance concern at ~30 groups |
+| Large number of endpoints in a single group       | Accordion content gets long             | Endpoints are lightweight DOM elements — no performance concern at ~30 groups               |

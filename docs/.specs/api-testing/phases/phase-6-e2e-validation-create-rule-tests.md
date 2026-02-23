@@ -179,19 +179,19 @@ Note: Test case 3 uses a hardcoded invalid token (not `{{auth_token}}`) because 
 
 ## Success criteria (from overview)
 
-| Criteria | Verified |
-| --- | --- |
-| Developer can click any API route group and see its test cases | |
-| Each test case can be started/stopped independently via play/stop | |
-| Pass/fail results appear inline, card highlights green/red | |
-| Dynamic variables configurable without database dependency | |
-| Variable resolution has no perceptible latency | |
-| MCP server auto-starts with `yarn start` and auto-registers | |
-| Agent can create, edit (partial), delete, and execute tests via MCP | |
-| Edit tool supports partial modifications without full rewrite | |
-| 3 `/v1/rules` test cases created by agent via MCP, execute successfully | |
-| UI shows execution history from both user and agent runs | |
-| Developer can filter history by initiator and result | |
+| Criteria                                                                | Verified |
+| ----------------------------------------------------------------------- | -------- |
+| Developer can click any API route group and see its test cases          |          |
+| Each test case can be started/stopped independently via play/stop       |          |
+| Pass/fail results appear inline, card highlights green/red              |          |
+| Dynamic variables configurable without database dependency              |          |
+| Variable resolution has no perceptible latency                          |          |
+| MCP server auto-starts with `yarn start` and auto-registers             |          |
+| Agent can create, edit (partial), delete, and execute tests via MCP     |          |
+| Edit tool supports partial modifications without full rewrite           |          |
+| 3 `/v1/rules` test cases created by agent via MCP, execute successfully |          |
+| UI shows execution history from both user and agent runs                |          |
+| Developer can filter history by initiator and result                    |          |
 
 ## What comes out of this phase
 

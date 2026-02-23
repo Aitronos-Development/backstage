@@ -41,15 +41,15 @@ Test case editing follows the same paradigm as editing source files in code — 
 
 The `edit_test_case` MCP tool accepts the following parameters:
 
-| Parameter | Required | Description |
-| --- | --- | --- |
-| `test_case_id` | yes | The ID of the test case to modify |
-| `route_group` | yes | The API route group the test belongs to |
-| `field` | yes | Which field to edit: `name`, `method`, `path`, `headers`, `body`, `assertions` |
-| `old_value` | no | The current value (or substring) to match against — acts as a safety check to prevent stale edits |
-| `new_value` | yes | The replacement value |
-| `replace_all` | no | If `true`, replaces all occurrences of `old_value` within the field (useful for bulk find-and-replace in headers or body). Defaults to `false` (first match only) |
-| `merge` | no | If `true` and the field is an object (e.g., `headers`, `assertions`), deep-merges `new_value` into the existing object instead of replacing the whole field. Defaults to `false` |
+| Parameter      | Required | Description                                                                                                                                                                      |
+| -------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test_case_id` | yes      | The ID of the test case to modify                                                                                                                                                |
+| `route_group`  | yes      | The API route group the test belongs to                                                                                                                                          |
+| `field`        | yes      | Which field to edit: `name`, `method`, `path`, `headers`, `body`, `assertions`                                                                                                   |
+| `old_value`    | no       | The current value (or substring) to match against — acts as a safety check to prevent stale edits                                                                                |
+| `new_value`    | yes      | The replacement value                                                                                                                                                            |
+| `replace_all`  | no       | If `true`, replaces all occurrences of `old_value` within the field (useful for bulk find-and-replace in headers or body). Defaults to `false` (first match only)                |
+| `merge`        | no       | If `true` and the field is an object (e.g., `headers`, `assertions`), deep-merges `new_value` into the existing object instead of replacing the whole field. Defaults to `false` |
 
 **Why this matters:**
 
@@ -96,11 +96,11 @@ Test cases are stored as **JSON files on disk** inside the repository (e.g., `ap
 
 To validate this MCP flow end-to-end, the agent will use the MCP to create **3 test cases** for the `/v1/rules` (create rule) endpoint:
 
-| # | Test Case | What it checks |
-| --- | --- | --- |
-| 1 | Create rule with valid payload returns 201 | Happy path — valid body, expect 201 and the created rule object in the response |
-| 2 | Create rule with missing required fields returns 422 | Validation — omit required fields, expect 422 with a structured error describing missing fields |
-| 3 | Create rule with invalid auth token returns 401 | Auth guard — send an invalid/expired token, expect 401 Unauthorized |
+| #   | Test Case                                            | What it checks                                                                                  |
+| --- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | Create rule with valid payload returns 201           | Happy path — valid body, expect 201 and the created rule object in the response                 |
+| 2   | Create rule with missing required fields returns 422 | Validation — omit required fields, expect 422 with a structured error describing missing fields |
+| 3   | Create rule with invalid auth token returns 401      | Auth guard — send an invalid/expired token, expect 401 Unauthorized                             |
 
 These three cases cover the basic functionality surface: success, validation failure, and auth failure. The agent creates them through the MCP, runs them, and the results appear in the Backstage UI — proving the full loop (agent → MCP → test execution → UI) works.
 
@@ -110,26 +110,26 @@ Every test execution is recorded, regardless of who initiated it. The UI provide
 
 ### What gets recorded per execution
 
-| Field | Description |
-| --- | --- |
-| **Timestamp** | When the test was executed |
-| **Initiator** | `user` (triggered from the Backstage UI) or `agent` (triggered via MCP by Claude Code) |
-| **Agent identity** | If initiated by an agent, the session or agent identifier is recorded |
-| **Test case name** | Which test case was run |
-| **API route group** | Which route group the test belongs to |
-| **Result** | Pass or fail |
-| **Response details** | Status code, response time, and failure reason (if any) |
+| Field                | Description                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| **Timestamp**        | When the test was executed                                                             |
+| **Initiator**        | `user` (triggered from the Backstage UI) or `agent` (triggered via MCP by Claude Code) |
+| **Agent identity**   | If initiated by an agent, the session or agent identifier is recorded                  |
+| **Test case name**   | Which test case was run                                                                |
+| **API route group**  | Which route group the test belongs to                                                  |
+| **Result**           | Pass or fail                                                                           |
+| **Response details** | Status code, response time, and failure reason (if any)                                |
 
 ### What the developer sees
 
 Below the test case list for each API route group, a **History** section shows recent executions:
 
-| Time | Initiated by | Test Case | Result | Duration |
-| --- | --- | --- | --- | --- |
-| 2 min ago | 🤖 Agent | Create rule with valid payload returns 201 | ✅ Pass | 120ms |
-| 2 min ago | 🤖 Agent | Create rule with missing fields returns 422 | ✅ Pass | 85ms |
-| 2 min ago | 🤖 Agent | Create rule with invalid auth returns 401 | ✅ Pass | 62ms |
-| 15 min ago | 👤 User | Create rule with valid payload returns 201 | ❌ Fail | 340ms |
+| Time       | Initiated by | Test Case                                   | Result  | Duration |
+| ---------- | ------------ | ------------------------------------------- | ------- | -------- |
+| 2 min ago  | 🤖 Agent     | Create rule with valid payload returns 201  | ✅ Pass | 120ms    |
+| 2 min ago  | 🤖 Agent     | Create rule with missing fields returns 422 | ✅ Pass | 85ms     |
+| 2 min ago  | 🤖 Agent     | Create rule with invalid auth returns 401   | ✅ Pass | 62ms     |
+| 15 min ago | 👤 User      | Create rule with valid payload returns 201  | ❌ Fail | 340ms    |
 
 The history is stored in a local file (`api-tests/.history/<route-group>.jsonl`) — append-only, one JSON line per execution. No database. The MCP server writes agent-initiated entries; the Backstage backend writes user-initiated entries. Both use the same schema so the UI renders them identically.
 
@@ -155,11 +155,11 @@ Storing dynamic variables (base URL, auth tokens, custom headers) in a database 
 
 Instead, dynamic variables are resolved using a **local-first layered config strategy**:
 
-| Layer | Source | Example |
-| --- | --- | --- |
-| **App config** | `app-config.yaml` under a dedicated `apiTesting` key | Base URLs per environment (`develop`, `staging`, `production`) |
-| **Browser local storage** | Per-user overrides stored in the browser | Personal auth tokens, one-off header values |
-| **Runtime injection** | Inline overrides at test execution time via the UI | Ad-hoc token for a single test run |
+| Layer                     | Source                                               | Example                                                        |
+| ------------------------- | ---------------------------------------------------- | -------------------------------------------------------------- |
+| **App config**            | `app-config.yaml` under a dedicated `apiTesting` key | Base URLs per environment (`develop`, `staging`, `production`) |
+| **Browser local storage** | Per-user overrides stored in the browser             | Personal auth tokens, one-off header values                    |
+| **Runtime injection**     | Inline overrides at test execution time via the UI   | Ad-hoc token for a single test run                             |
 
 Resolution order: **runtime injection > local storage > app config > defaults**. This means a developer can set long-lived defaults in config, personalize via the browser, and override anything at the moment of execution — all with zero network latency.
 
@@ -169,29 +169,29 @@ A developer navigates to the API documentation tab for Freddy Backend.
 
 **API list view** — each parent route group is displayed as a card:
 
-| API Route Group | Status |
-| --- | --- |
-| `/v1/health` | — |
-| `/v1/auth` | — |
-| `/v1/assistants` | — |
-| `/v1/threads` | — |
-| `/v1/messages` | — |
+| API Route Group  | Status |
+| ---------------- | ------ |
+| `/v1/health`     | —      |
+| `/v1/auth`       | —      |
+| `/v1/assistants` | —      |
+| `/v1/threads`    | —      |
+| `/v1/messages`   | —      |
 
 The developer clicks on `/v1/auth`. The card expands to reveal a list of test cases:
 
-| Test Case | Actions | Result |
-| --- | --- | --- |
-| Valid login returns 200 and token | ▶ ⏹ | — |
-| Expired token returns 401 | ▶ ⏹ | — |
-| Missing credentials returns 422 | ▶ ⏹ | — |
+| Test Case                         | Actions | Result |
+| --------------------------------- | ------- | ------ |
+| Valid login returns 200 and token | ▶ ⏹     | —      |
+| Expired token returns 401         | ▶ ⏹     | —      |
+| Missing credentials returns 422   | ▶ ⏹     | —      |
 
 The developer clicks ▶ on "Valid login returns 200 and token." The test runs. The result column updates:
 
-| Test Case | Actions | Result |
-| --- | --- | --- |
-| Valid login returns 200 and token | ▶ ⏹ | ✅ Pass |
-| Expired token returns 401 | ▶ ⏹ | — |
-| Missing credentials returns 422 | ▶ ⏹ | — |
+| Test Case                         | Actions | Result  |
+| --------------------------------- | ------- | ------- |
+| Valid login returns 200 and token | ▶ ⏹     | ✅ Pass |
+| Expired token returns 401         | ▶ ⏹     | —       |
+| Missing credentials returns 422   | ▶ ⏹     | —       |
 
 The `/v1/auth` card header turns **green** because all executed tests passed. If any test fails, the card header turns **red** and the failing test row highlights with the failure reason.
 
@@ -203,20 +203,20 @@ The `/v1/auth` card header turns **green** because all executed tests passed. If
 
 ## Scope Summary
 
-| In scope | Out of scope (future) |
-| --- | --- |
-| Collapsible test case list per API | Test authoring UI in the browser |
-| Play/stop controls per test case | CI/CD triggered test runs |
-| Inline pass/fail highlighting on API cards | Load testing / performance benchmarks |
-| Dynamic variables via app-config + local storage | Mock server / request stubbing |
-| Runtime variable override in UI | Database-backed variable storage |
-| Per-environment base URL switching | |
-| Local MCP server for agent-driven test CRUD and execution | |
-| File-editing-style test case modifications (partial edits, merge, replace) | |
-| MCP auto-starts with `yarn start`, auto-registers in Claude Code settings | |
-| Unified execution history (user + agent initiated) | |
-| History stored as local `.jsonl` files, no database | |
-| 3 validation test cases for `/v1/rules` created via MCP | |
+| In scope                                                                   | Out of scope (future)                 |
+| -------------------------------------------------------------------------- | ------------------------------------- |
+| Collapsible test case list per API                                         | Test authoring UI in the browser      |
+| Play/stop controls per test case                                           | CI/CD triggered test runs             |
+| Inline pass/fail highlighting on API cards                                 | Load testing / performance benchmarks |
+| Dynamic variables via app-config + local storage                           | Mock server / request stubbing        |
+| Runtime variable override in UI                                            | Database-backed variable storage      |
+| Per-environment base URL switching                                         |                                       |
+| Local MCP server for agent-driven test CRUD and execution                  |                                       |
+| File-editing-style test case modifications (partial edits, merge, replace) |                                       |
+| MCP auto-starts with `yarn start`, auto-registers in Claude Code settings  |                                       |
+| Unified execution history (user + agent initiated)                         |                                       |
+| History stored as local `.jsonl` files, no database                        |                                       |
+| 3 validation test cases for `/v1/rules` created via MCP                    |                                       |
 
 ## Success Criteria
 

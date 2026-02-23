@@ -50,13 +50,20 @@ Each line is a self-contained JSON object:
   "request": {
     "method": "POST",
     "url": "http://localhost:8000/v1/rules",
-    "headers": { "Content-Type": "application/json", "Authorization": "Bearer ***" },
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer ***"
+    },
     "body": { "name": "test-rule", "description": "A test rule" }
   },
   "response": {
     "status_code": 201,
     "headers": { "content-type": "application/json" },
-    "body": { "id": "rule-123", "name": "test-rule", "created_at": "2026-02-19T14:30:00Z" }
+    "body": {
+      "id": "rule-123",
+      "name": "test-rule",
+      "created_at": "2026-02-19T14:30:00Z"
+    }
   },
   "failure_reason": null
 }
@@ -241,6 +248,7 @@ plugins/api-testing/src/hooks/
 ```
 
 The `useExecutionHistory` hook manages:
+
 - Initial fetch of records for a specific `(routeGroup, testCaseId)` pair
 - Filter state (`initiator`, `result`) with `setFilters` setter
 - Pagination via `loadMore` (increments offset, appends results)
@@ -304,9 +312,9 @@ A complete execution audit trail, unified across human and agent activity, with 
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| History files grow unbounded | Disk usage | Implement optional rotation: archive files older than 30 days; or add a `max_entries` config |
-| Concurrent appends from backend + MCP | Line corruption | JSONL is append-only and atomic at the OS level for single-line writes; no interleaving risk |
-| Sensitive data in response bodies | Security concern | Mask auth headers; add configurable body redaction rules for future |
-| `tail()` on large files is slow | History page lags | Maintain a separate `.recent` file with last 100 entries for fast reads |
+| Risk                                  | Impact            | Mitigation                                                                                   |
+| ------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------- |
+| History files grow unbounded          | Disk usage        | Implement optional rotation: archive files older than 30 days; or add a `max_entries` config |
+| Concurrent appends from backend + MCP | Line corruption   | JSONL is append-only and atomic at the OS level for single-line writes; no interleaving risk |
+| Sensitive data in response bodies     | Security concern  | Mask auth headers; add configurable body redaction rules for future                          |
+| `tail()` on large files is slow       | History page lags | Maintain a separate `.recent` file with last 100 entries for fast reads                      |

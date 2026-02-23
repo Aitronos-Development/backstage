@@ -18,12 +18,24 @@ import {
   identityApiRef,
   useApi,
 } from '@backstage/core-plugin-api';
+import { appLanguageApiRef } from '@backstage/core-plugin-api/alpha';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useAsync from 'react-use/esm/useAsync';
+import useObservable from 'react-use/esm/useObservable';
 import { getTimeBasedGreeting } from './timeUtil';
 import { Variant } from '@material-ui/core/styles/createTypography';
+
+/** Map a BCP-47 language code (e.g. "en") to the English display name used in locale files */
+function languageCodeToName(code: string): string | undefined {
+  try {
+    const names = new Intl.DisplayNames(['en'], { type: 'language' });
+    return names.of(code);
+  } catch {
+    return undefined;
+  }
+}
 
 /** @public */
 export type WelcomeTitleLanguageProps = {
@@ -37,7 +49,25 @@ export const WelcomeTitle = ({
 }: WelcomeTitleLanguageProps) => {
   const identityApi = useApi(identityApiRef);
   const alertApi = useApi(alertApiRef);
-  const greeting = useMemo(() => getTimeBasedGreeting(language), [language]);
+
+  const languageApi = useApi(appLanguageApiRef);
+  const [languageObservable] = useState(() => languageApi.language$());
+  const { language: appLanguageCode } = useObservable(
+    languageObservable,
+    languageApi.getLanguage(),
+  );
+  const appLanguageName = useMemo(
+    () => languageCodeToName(appLanguageCode),
+    [appLanguageCode],
+  );
+
+  const greeting = useMemo(
+    () =>
+      getTimeBasedGreeting(
+        language ?? (appLanguageName ? [appLanguageName] : undefined),
+      ),
+    [language, appLanguageName],
+  );
 
   const { value: profile, error } = useAsync(() =>
     identityApi.getProfileInfo(),

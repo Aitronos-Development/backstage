@@ -52,10 +52,10 @@ import path from 'path';
 const mcpServer = fork(
   path.resolve(__dirname, '../../plugins/api-testing-mcp-server/src/index.ts'),
   [],
-  { stdio: ['pipe', 'pipe', 'pipe', 'ipc'] }
+  { stdio: ['pipe', 'pipe', 'pipe', 'ipc'] },
 );
 
-mcpServer.on('error', (err) => {
+mcpServer.on('error', err => {
   logger.error('MCP server failed to start', err);
 });
 
@@ -104,8 +104,19 @@ server.tool(
     route_group: { type: 'string', description: 'e.g. /v1/rules' },
   },
   async ({ route_group }) => {
-    return { content: [{ type: 'text', text: JSON.stringify({ route_group, test_cases: [], message: 'stub — Phase 2 implements storage' }) }] };
-  }
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            route_group,
+            test_cases: [],
+            message: 'stub — Phase 2 implements storage',
+          }),
+        },
+      ],
+    };
+  },
 );
 ```
 
@@ -141,8 +152,8 @@ A running MCP server that Claude Code can talk to, with all tool interfaces defi
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| `@modelcontextprotocol/sdk` API changes | Server won't start | Pin SDK version, follow MCP changelog |
-| Child process forking issues on Windows | Dev environment incompatibility | Primary target is macOS/Linux; document Windows as untested |
-| `.claude/settings.json` permissions or format conflicts | Registration fails silently | Read-check-write with error logging; fall back to manual instructions |
+| Risk                                                    | Impact                          | Mitigation                                                            |
+| ------------------------------------------------------- | ------------------------------- | --------------------------------------------------------------------- |
+| `@modelcontextprotocol/sdk` API changes                 | Server won't start              | Pin SDK version, follow MCP changelog                                 |
+| Child process forking issues on Windows                 | Dev environment incompatibility | Primary target is macOS/Linux; document Windows as untested           |
+| `.claude/settings.json` permissions or format conflicts | Registration fails silently     | Read-check-write with error logging; fall back to manual instructions |

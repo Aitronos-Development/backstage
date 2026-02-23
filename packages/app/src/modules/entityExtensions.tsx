@@ -27,12 +27,9 @@ const healthCheckEntityCard = EntityCardBlueprint.make({
   name: 'health-check',
   params: {
     filter: entity =>
-      entity.kind === 'Component' &&
-      (entity.spec as any)?.type === 'service',
+      entity.kind === 'Component' && (entity.spec as any)?.type === 'service',
     loader: () =>
-      import('../components/HealthCheckCard').then(m => (
-        <m.HealthCheckCard />
-      )),
+      import('../components/HealthCheckCard').then(m => <m.HealthCheckCard />),
   },
 });
 
@@ -43,8 +40,7 @@ const providedApisSummaryCard = EntityCardBlueprint.make({
   name: 'provided-apis-summary',
   params: {
     filter: entity =>
-      entity.kind === 'Component' &&
-      (entity.spec as any)?.type === 'service',
+      entity.kind === 'Component' && (entity.spec as any)?.type === 'service',
     loader: () =>
       import('../components/ApiSummaryCards').then(m => (
         <m.ProvidedApisSummaryCard />
@@ -59,8 +55,7 @@ const consumedApisSummaryCard = EntityCardBlueprint.make({
   name: 'consumed-apis-summary',
   params: {
     filter: entity =>
-      entity.kind === 'Component' &&
-      (entity.spec as any)?.type === 'service',
+      entity.kind === 'Component' && (entity.spec as any)?.type === 'service',
     loader: () =>
       import('../components/ApiSummaryCards').then(m => (
         <m.ConsumedApisSummaryCard />
@@ -78,8 +73,9 @@ const apiRouteDefinitionContent = EntityContentBlueprint.make({
     path: '/testing',
     title: 'API Testing',
     filter: entity =>
-      entity.kind === 'Component' &&
-      (entity.spec as any)?.type === 'service',
+      (entity.kind === 'Component' &&
+        (entity.spec as any)?.type === 'service') ||
+      entity.kind === 'API',
     loader: async () =>
       import('../components/ApiRouteDefinitionContent').then(m => (
         <m.ApiRouteDefinitionContent />

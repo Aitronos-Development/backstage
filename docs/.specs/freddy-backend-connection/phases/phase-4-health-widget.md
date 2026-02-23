@@ -52,12 +52,9 @@ const healthCheckEntityCard = EntityCardBlueprint.make({
   name: 'health-check',
   params: {
     filter: entity =>
-      entity.kind === 'Component' &&
-      (entity.spec as any)?.type === 'service',
+      entity.kind === 'Component' && (entity.spec as any)?.type === 'service',
     loader: () =>
-      import('../components/HealthCheckCard').then(m => (
-        <m.HealthCheckCard />
-      )),
+      import('../components/HealthCheckCard').then(m => <m.HealthCheckCard />),
   },
 });
 ```
@@ -74,7 +71,11 @@ const healthCheckEntityCard = EntityCardBlueprint.make({
    {
      "status": "healthy",
      "components": [
-       { "name": "database", "status": "healthy", "details": "Connection successful" },
+       {
+         "name": "database",
+         "status": "healthy",
+         "details": "Connection successful"
+       },
        { "name": "redis_cache", "status": "healthy", "details": "..." },
        { "name": "limit_enforcement", "status": "healthy", "details": "..." },
        { "name": "qdrant_vector_store", "status": "healthy", "details": "..." }
@@ -95,11 +96,11 @@ const healthCheckEntityCard = EntityCardBlueprint.make({
 
 Binary — no yellow/degraded state:
 
-| Freddy status | Card display |
-|---------------|-------------|
-| `healthy` or `ok` | Green light, "Up" |
-| Anything else (`degraded`, `unhealthy`, `error`) | Red light, "Down" |
-| Fetch error / unreachable | Red light, "Down — {error}" |
+| Freddy status                                    | Card display                |
+| ------------------------------------------------ | --------------------------- |
+| `healthy` or `ok`                                | Green light, "Up"           |
+| Anything else (`degraded`, `unhealthy`, `error`) | Red light, "Down"           |
+| Fetch error / unreachable                        | Red light, "Down — {error}" |
 
 ### Styling
 
@@ -169,9 +170,9 @@ fi
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| CORS issues between Backstage and Freddy | Health calls fail | The proxy backend handles this — requests go Backstage backend → Freddy, not browser → Freddy |
-| Freddy is down | Card shows error | Handled gracefully: shows red status with "Down — Service unreachable" |
-| Polling every 30s adds load | Minimal | One lightweight GET request every 30s is negligible |
-| `packages/app/app-config.yaml` not loaded | Extension config ignored | Fixed in `start-dev.sh` by adding it to `build_config_flags()` |
+| Risk                                      | Impact                   | Mitigation                                                                                    |
+| ----------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------- |
+| CORS issues between Backstage and Freddy  | Health calls fail        | The proxy backend handles this — requests go Backstage backend → Freddy, not browser → Freddy |
+| Freddy is down                            | Card shows error         | Handled gracefully: shows red status with "Down — Service unreachable"                        |
+| Polling every 30s adds load               | Minimal                  | One lightweight GET request every 30s is negligible                                           |
+| `packages/app/app-config.yaml` not loaded | Extension config ignored | Fixed in `start-dev.sh` by adding it to `build_config_flags()`                                |

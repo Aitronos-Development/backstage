@@ -88,5 +88,11 @@ export function AppThemeProvider({ children }: PropsWithChildren<{}>) {
     throw new Error('App has no themes');
   }
 
-  return <appTheme.Provider children={children} />;
+  // Call Provider as a render function rather than a JSX component so that
+  // React sees the stable inner element type (e.g. UnifiedThemeProvider)
+  // across theme switches.  Using <appTheme.Provider /> would give React a
+  // *different* component type for each theme, causing a full unmount /
+  // remount of the entire app tree on every theme change.
+  const renderTheme = appTheme.Provider;
+  return renderTheme({ children });
 }

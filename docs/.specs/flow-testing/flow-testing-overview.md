@@ -28,6 +28,7 @@ A new **"FLOW TEST"** tab in the entity page topbar, alongside the existing **DE
 When a user clicks into a Service API entity, they see these three top-level tabs. Clicking "FLOW TEST" opens the flow testing interface for that API.
 
 Below the topbar, the page shows:
+
 - **API Routes** with route group count (from DEFINITION)
 - **Flow definitions** with run status (from FLOW TEST)
 
@@ -62,15 +63,15 @@ A flow is an ordered sequence of **steps**. Each step calls one API endpoint and
 
 ### Key Terminology
 
-| Term | Description |
-|---|---|
-| **Flow** | A named, ordered sequence of steps representing a user journey |
-| **Step** | A single HTTP request within a flow, with optional extractions and assertions |
-| **Extraction** | A rule that pulls a value from a step's response (JSONPath or dot-notation) |
-| **Variable** | A named value available across steps — either extracted from a prior step or provided as input |
-| **Input Variable** | A value the user provides before running the flow (e.g., email, password, base URL) |
-| **Assertion** | A condition a step's response must satisfy (status code, body field values, field presence) |
-| **Flow Run** | A single execution of a flow — records pass/fail per step plus timing |
+| Term               | Description                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| **Flow**           | A named, ordered sequence of steps representing a user journey                                 |
+| **Step**           | A single HTTP request within a flow, with optional extractions and assertions                  |
+| **Extraction**     | A rule that pulls a value from a step's response (JSONPath or dot-notation)                    |
+| **Variable**       | A named value available across steps — either extracted from a prior step or provided as input |
+| **Input Variable** | A value the user provides before running the flow (e.g., email, password, base URL)            |
+| **Assertion**      | A condition a step's response must satisfy (status code, body field values, field presence)    |
+| **Flow Run**       | A single execution of a flow — records pass/fail per step plus timing                          |
 
 ---
 
@@ -97,10 +98,16 @@ api-tests/
   "description": "Full login flow: credentials → email verification → authenticated session",
   "base_url": "{{base_url}}",
   "input_variables": {
-    "base_url": { "description": "API base URL", "default": "http://localhost:8000" },
+    "base_url": {
+      "description": "API base URL",
+      "default": "http://localhost:8000"
+    },
     "email": { "description": "User email address" },
     "password": { "description": "User password" },
-    "static_otp": { "description": "Static OTP code (non-production)", "default": "1234" }
+    "static_otp": {
+      "description": "Static OTP code (non-production)",
+      "default": "1234"
+    }
   },
   "steps": [
     {
@@ -186,15 +193,15 @@ A new set of MCP tools will be added to the existing `api-testing-mcp-server` (n
 
 ### New Tools
 
-| Tool | Description |
-|---|---|
-| `list_flows` | List all flow definitions from `api-tests/flows/` |
-| `read_flow` | Read a single flow definition by ID |
-| `create_flow` | Create a new flow definition |
-| `edit_flow` | Edit an existing flow (add/remove/reorder steps, update variables) |
-| `delete_flow` | Delete a flow definition |
-| `run_flow` | Execute a flow end-to-end, returns per-step results |
-| `get_flow_history` | Get execution history for a flow |
+| Tool               | Description                                                        |
+| ------------------ | ------------------------------------------------------------------ |
+| `list_flows`       | List all flow definitions from `api-tests/flows/`                  |
+| `read_flow`        | Read a single flow definition by ID                                |
+| `create_flow`      | Create a new flow definition                                       |
+| `edit_flow`        | Edit an existing flow (add/remove/reorder steps, update variables) |
+| `delete_flow`      | Delete a flow definition                                           |
+| `run_flow`         | Execute a flow end-to-end, returns per-step results                |
+| `get_flow_history` | Get execution history for a flow                                   |
 
 ### `run_flow` Execution Model
 
@@ -234,9 +241,15 @@ run_flow({ flow_id, variable_overrides })
       "name": "Submit credentials",
       "status": "passed",
       "duration_ms": 890,
-      "request": { "method": "POST", "url": "http://localhost:8000/auth/login", "body": "..." },
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8000/auth/login",
+        "body": "..."
+      },
       "response": { "status_code": 200, "body": "..." },
-      "assertions": { "status_code": { "expected": 200, "actual": 200, "passed": true } },
+      "assertions": {
+        "status_code": { "expected": 200, "actual": 200, "passed": true }
+      },
       "extracted": { "email_key": "a1b2c3d4-..." }
     },
     {
@@ -326,18 +339,23 @@ Clicking any step expands to show the full request/response with headers and bod
 Based on the [Freddy Backend Authentication Flow Overview](../login%20flow/authentication-flow-overview.md), the first set of flows to include:
 
 ### 1. User Login (3 steps)
+
 `POST /auth/login` → `POST /auth/verify` → `GET /auth/validate`
 
 ### 2. User Registration (4 steps)
+
 `POST /auth/validate-email` → `POST /auth/register` → `POST /auth/verify` → `GET /auth/validate`
 
 ### 3. Password Reset (3 steps)
+
 `POST /auth/password/reset` → `POST /auth/password/reset/verify` → `POST /auth/login`
 
 ### 4. Token Refresh (3 steps)
+
 `POST /auth/login` → `POST /auth/verify` → `POST /auth/refresh`
 
 ### 5. Logout (3 steps)
+
 `POST /auth/login` → `POST /auth/verify` → `POST /auth/logout`
 
 ---
@@ -345,23 +363,27 @@ Based on the [Freddy Backend Authentication Flow Overview](../login%20flow/authe
 ## Implementation Phases
 
 ### Phase 1: MCP Flow Engine
+
 - Flow file storage (read/write `api-tests/flows/*.flow.json`)
 - Variable resolution engine (input vars, step extractions, overrides)
 - Sequential step executor with extraction and assertion logic
 - MCP tools: `list_flows`, `read_flow`, `create_flow`, `edit_flow`, `delete_flow`, `run_flow`, `get_flow_history`
 
 ### Phase 2: Frontend — Flow Test Tab
+
 - New "FLOW TEST" tab registered alongside DEFINITION and TECHDOCS on the Service API entity page
 - Flow list view with last-run status
 - Flow detail view with input variable form
 - Step-by-step execution results with expandable request/response
 
 ### Phase 3: Seed Flows & History
+
 - Ship the 5 initial authentication flows as defaults
 - Execution history storage per flow (file-based, same pattern as API test history)
 - History view with pass/fail timeline per flow
 
 ### Phase 4: Advanced Features (Future)
+
 - Conditional steps (skip step if condition met)
 - Parallel step groups (steps that can run concurrently)
 - Flow composition (one flow calling another as a sub-flow)
@@ -371,11 +393,11 @@ Based on the [Freddy Backend Authentication Flow Overview](../login%20flow/authe
 
 ## Relationship to Existing API Testing
 
-| Aspect | API Testing (existing) | Flow Testing (new) |
-|---|---|---|
-| **Scope** | Single endpoint | Multi-endpoint journey |
-| **Storage** | `api-tests/<route-group>.json` | `api-tests/flows/<name>.flow.json` |
-| **MCP Server** | `api-testing-mcp-server` | Same server, new tools added |
-| **Data passing** | None (each test is independent) | Extractions flow between steps |
-| **UI location** | DEFINITION tab content | FLOW TEST tab (top-level, next to DEFINITION & TECHDOCS) |
-| **First use case** | Individual endpoint validation | Login / registration / password flows |
+| Aspect             | API Testing (existing)          | Flow Testing (new)                                       |
+| ------------------ | ------------------------------- | -------------------------------------------------------- |
+| **Scope**          | Single endpoint                 | Multi-endpoint journey                                   |
+| **Storage**        | `api-tests/<route-group>.json`  | `api-tests/flows/<name>.flow.json`                       |
+| **MCP Server**     | `api-testing-mcp-server`        | Same server, new tools added                             |
+| **Data passing**   | None (each test is independent) | Extractions flow between steps                           |
+| **UI location**    | DEFINITION tab content          | FLOW TEST tab (top-level, next to DEFINITION & TECHDOCS) |
+| **First use case** | Individual endpoint validation  | Login / registration / password flows                    |

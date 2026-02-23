@@ -233,6 +233,7 @@ Backend receives test case ID, resolves variables, executes the HTTP request, ev
 ### 3.6 Integrate into `ApiRouteDefinitionContent`
 
 Enhance the existing route definition accordion in `packages/app/src/components/ApiRouteDefinitionContent.tsx`:
+
 - Import hooks and components from `@internal/plugin-api-testing`
 - Add `EndpointWithTests` component — each endpoint row becomes collapsible to reveal its test cases
 - Add `RouteGroupTestSection` logic into `RouteGroupAccordion` — fetches test cases, manages execution state, matches tests to endpoints
@@ -261,11 +262,11 @@ The full inline test runner — developers can see, run, and stop tests from wit
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| WebSocket connections drop silently | UI goes stale | Implement reconnect logic with exponential backoff in `useWebSocket` |
-| Test execution timeout | UI stuck in "running" | Enforce 30s timeout on backend; auto-transition to failed state |
-| Large number of test cases per endpoint | Slow rendering | Collapse is unmounted when closed (`unmountOnExit`); only expanded endpoints render their table |
-| Path mismatch between OpenAPI and test cases | Tests don't appear under the right endpoint | `normalizePath()` handles `{param}` ↔ `:param`; unmatched tests shown in fallback section |
-| CORS issues on test execution | Requests fail | All requests go through the Backstage backend proxy — no direct browser-to-API calls |
-| Route group encoding mismatch | Test cases not found — wrong Express route matched | Use `encodeRouteGroup()` consistently on both frontend and backend to convert `/v1/health` → `v1-health` in URL paths |
+| Risk                                         | Impact                                             | Mitigation                                                                                                            |
+| -------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| WebSocket connections drop silently          | UI goes stale                                      | Implement reconnect logic with exponential backoff in `useWebSocket`                                                  |
+| Test execution timeout                       | UI stuck in "running"                              | Enforce 30s timeout on backend; auto-transition to failed state                                                       |
+| Large number of test cases per endpoint      | Slow rendering                                     | Collapse is unmounted when closed (`unmountOnExit`); only expanded endpoints render their table                       |
+| Path mismatch between OpenAPI and test cases | Tests don't appear under the right endpoint        | `normalizePath()` handles `{param}` ↔ `:param`; unmatched tests shown in fallback section                             |
+| CORS issues on test execution                | Requests fail                                      | All requests go through the Backstage backend proxy — no direct browser-to-API calls                                  |
+| Route group encoding mismatch                | Test cases not found — wrong Express route matched | Use `encodeRouteGroup()` consistently on both frontend and backend to convert `/v1/health` → `v1-health` in URL paths |

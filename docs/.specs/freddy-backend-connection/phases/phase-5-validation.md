@@ -51,12 +51,12 @@
 
 ## Success criteria (from overview)
 
-| Criteria | Verified |
-|----------|----------|
-| Developer can find "Freddy Backend" in the Backstage catalog | |
-| Clicking it shows live health status for all four components | |
-| API tab shows all parent route groups with interactive docs | |
-| No external tooling beyond Backstage and Freddy is required | |
+| Criteria                                                     | Verified |
+| ------------------------------------------------------------ | -------- |
+| Developer can find "Freddy Backend" in the Backstage catalog |          |
+| Clicking it shows live health status for all four components |          |
+| API tab shows all parent route groups with interactive docs  |          |
+| No external tooling beyond Backstage and Freddy is required  |          |
 
 ## What comes out of this phase
 

@@ -63,7 +63,7 @@ Freddy has a home page in Backstage. It doesn't show APIs or health yet — just
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
+| Risk                                            | Impact                       | Mitigation                                                |
+| ----------------------------------------------- | ---------------------------- | --------------------------------------------------------- |
 | `$text` URL fetch fails if Freddy isn't running | API entity has no definition | Document that Freddy must be running for API docs to load |
-| OpenAPI spec is large (~30 route groups) | Slow initial load | Acceptable for v1 — can cache later |
+| OpenAPI spec is large (~30 route groups)        | Slow initial load            | Acceptable for v1 — can cache later                       |

@@ -73,11 +73,11 @@
 
 The system supports three authentication methods:
 
-| Method | Header | Format | Use Case |
-|---|---|---|---|
-| **JWT Bearer Token** | `Authorization: Bearer <token>` | HS256-signed JWT with Fernet-encrypted payload | User login sessions |
-| **Organization API Key** | `x-api-key` | `ak_{env}_{base64_key}` | Programmatic access |
-| **Flowplate User Key** | `x-api-key` | `fl_user_{env}_{hex}` | Flowplate integration |
+| Method                   | Header                          | Format                                         | Use Case              |
+| ------------------------ | ------------------------------- | ---------------------------------------------- | --------------------- |
+| **JWT Bearer Token**     | `Authorization: Bearer <token>` | HS256-signed JWT with Fernet-encrypted payload | User login sessions   |
+| **Organization API Key** | `x-api-key`                     | `ak_{env}_{base64_key}`                        | Programmatic access   |
+| **Flowplate User Key**   | `x-api-key`                     | `fl_user_{env}_{hex}`                          | Flowplate integration |
 
 ---
 
@@ -85,20 +85,20 @@ The system supports three authentication methods:
 
 ### Required Environment Variables
 
-| Setting | Default | Description |
-|---|---|---|
-| `SECRET_KEY` | **Required** | >= 32 char hex for JWT signing |
-| `JWT_PAYLOAD_ENCRYPTION_KEY` | **Required** | >= 32 char base64 for Fernet encryption |
-| `JWT_ALGORITHM` | `HS256` | HMAC-SHA256 |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30240` | 3 weeks (60 * 24 * 21) |
-| `REFRESH_TOKEN_EXPIRE_MINUTES` | `30` | 30 days (used as days despite name) |
-| `ADMIN_API_KEY` | **Required** (except test) | Admin endpoint protection |
-| `AUTHENTICATION_MODE` | `aitronos` | `aitronos` or `flowplate` |
-| `TESTER_STATIC_EMAIL` | `None` | Static OTP bypass email (non-prod) |
-| `TESTER_STATIC_OTP` | `None` | Static OTP bypass code (non-prod) |
-| `FLOWPLATE_MASTER_API_KEY` | `""` | Flowplate integration key |
-| `EMAIL_ENABLED` | `False` | Enable email sending |
-| `ENVIRONMENT` | `local` | `local` / `develop` / `staging` / `production` / `test` |
+| Setting                        | Default                    | Description                                             |
+| ------------------------------ | -------------------------- | ------------------------------------------------------- |
+| `SECRET_KEY`                   | **Required**               | >= 32 char hex for JWT signing                          |
+| `JWT_PAYLOAD_ENCRYPTION_KEY`   | **Required**               | >= 32 char base64 for Fernet encryption                 |
+| `JWT_ALGORITHM`                | `HS256`                    | HMAC-SHA256                                             |
+| `ACCESS_TOKEN_EXPIRE_MINUTES`  | `30240`                    | 3 weeks (60 _ 24 _ 21)                                  |
+| `REFRESH_TOKEN_EXPIRE_MINUTES` | `30`                       | 30 days (used as days despite name)                     |
+| `ADMIN_API_KEY`                | **Required** (except test) | Admin endpoint protection                               |
+| `AUTHENTICATION_MODE`          | `aitronos`                 | `aitronos` or `flowplate`                               |
+| `TESTER_STATIC_EMAIL`          | `None`                     | Static OTP bypass email (non-prod)                      |
+| `TESTER_STATIC_OTP`            | `None`                     | Static OTP bypass code (non-prod)                       |
+| `FLOWPLATE_MASTER_API_KEY`     | `""`                       | Flowplate integration key                               |
+| `EMAIL_ENABLED`                | `False`                    | Enable email sending                                    |
+| `ENVIRONMENT`                  | `local`                    | `local` / `develop` / `staging` / `production` / `test` |
 
 ---
 
@@ -170,7 +170,8 @@ SELECT * FROM pending_registrations WHERE username = 'rahul.sa'
 #### 4. Password Strength Validation
 
 Rules:
-- >= 8 characters
+
+- > = 8 characters
 - <= 128 characters
 - At least one special character (`!@#$%^&*()_+-=[]{}|;:,.<>?/\\"'` `` ` `` `~`)
 - Not in weak password list: `password`, `12345678`, `qwerty`, `abc123`, `password123`, `admin123`, `letmein`, `welcome`, `monkey`, `1234567890`
@@ -247,6 +248,7 @@ INSERT INTO pending_registrations (
 **Source:** `app/services/auth/auth_service.py` -> `verify_email_and_get_tokens()`
 
 This single endpoint handles two paths:
+
 - **Registration verification** (if `email_key` matches a `PendingRegistration`)
 - **Login verification** (if `email_key` matches an `EmailVerification`)
 
@@ -274,6 +276,7 @@ Triggered when `email_key` matches a record in `pending_registrations`.
 #### Steps
 
 1. **Check if user already exists** (race condition guard):
+
    ```sql
    SELECT * FROM users WHERE email = ?
    -- If exists: delete pending registration, return 409
@@ -286,12 +289,14 @@ Triggered when `email_key` matches a record in `pending_registrations`.
 4. **Check expiry:** `pending_reg.expires_at < now` -> 401 "Expired"
 
 5. **Validate organization:**
+
    ```sql
    SELECT * FROM roles WHERE name = 'Member' AND organization_id = ?
    SELECT * FROM user_statuses WHERE name = 'Active' AND organization_id = ?
    ```
 
 6. **CREATE THE USER:**
+
    ```sql
    INSERT INTO users (
      id, email, hashed_password, full_name, username,
@@ -301,6 +306,7 @@ Triggered when `email_key` matches a record in `pending_registrations`.
    ```
 
 7. **Create organization membership:**
+
    ```sql
    INSERT INTO organization_users (
      organization_id, user_id, role_id, status_id, joined_at, is_deleted
@@ -312,11 +318,13 @@ Triggered when `email_key` matches a record in `pending_registrations`.
 9. **Send welcome email** (fire-and-forget, won't fail the flow).
 
 10. **Create device session** (if device info provided):
+
     ```sql
     INSERT INTO device_sessions (user_id, device_id, device_name, platform, ...)
     ```
 
 11. **Generate tokens:**
+
     ```python
     access_token = encode_jwt(
       sub=user_id, type="access", exp=3_weeks,
@@ -341,6 +349,7 @@ Triggered when `email_key` matches a record in `email_verifications`.
 #### Steps
 
 1. **Lookup:**
+
    ```sql
    SELECT * FROM email_verifications WHERE key = ?
    -- Not found: 404
@@ -357,6 +366,7 @@ Triggered when `email_key` matches a record in `email_verifications`.
 6. **Verify code:** Compare submitted code vs stored code. Mismatch -> 401 "Invalid verification code"
 
 7. **Update user:**
+
    ```sql
    UPDATE users SET last_verified = NOW() WHERE id = ?
    ```
@@ -858,17 +868,17 @@ For keys starting with `fl_user_`:
 
 ### API Key Model Fields
 
-| Field | Description |
-|---|---|
-| `id` | `ak_{uuid}` prefix |
-| `key_hash` | bcrypt hash of the raw key |
-| `key_prefix` | First N chars for efficient lookup |
-| `is_active` / `is_paused` / `is_deleted` | Lifecycle flags |
-| `usage_limit_chf` | Spending cap in Swiss Francs |
-| `scopes` | JSON array of permission scopes |
-| `expires_at` | Optional expiration |
-| `created_by` / `deleted_by` | Audit trail |
-| Multi-org support | via `api_key_organization` junction table |
+| Field                                    | Description                               |
+| ---------------------------------------- | ----------------------------------------- |
+| `id`                                     | `ak_{uuid}` prefix                        |
+| `key_hash`                               | bcrypt hash of the raw key                |
+| `key_prefix`                             | First N chars for efficient lookup        |
+| `is_active` / `is_paused` / `is_deleted` | Lifecycle flags                           |
+| `usage_limit_chf`                        | Spending cap in Swiss Francs              |
+| `scopes`                                 | JSON array of permission scopes           |
+| `expires_at`                             | Optional expiration                       |
+| `created_by` / `deleted_by`              | Audit trail                               |
+| Multi-org support                        | via `api_key_organization` junction table |
 
 ---
 
@@ -1074,16 +1084,16 @@ One-step login instead of two-step. Same request format as `/auth/login`, same r
 
 ### Token Claims
 
-| Claim | Description | Example |
-|---|---|---|
-| `iat` | Issued at (UTC) | `1708437600` |
-| `jti` | Unique token ID (UUID) | `"550e8400-e29b-..."` |
-| `type` | Token type | `"access"` or `"refresh"` |
-| `sub` | User ID (subject) | `"usr_abc123..."` |
-| `nbf` | Not before (same as iat) | `1708437600` |
-| `exp` | Expiration timestamp | `1710252000` |
-| `env` | Environment identifier | `"production"` |
-| `ctx` | **Fernet-encrypted** payload | `"gAAAAABl..."` |
+| Claim  | Description                  | Example                   |
+| ------ | ---------------------------- | ------------------------- |
+| `iat`  | Issued at (UTC)              | `1708437600`              |
+| `jti`  | Unique token ID (UUID)       | `"550e8400-e29b-..."`     |
+| `type` | Token type                   | `"access"` or `"refresh"` |
+| `sub`  | User ID (subject)            | `"usr_abc123..."`         |
+| `nbf`  | Not before (same as iat)     | `1708437600`              |
+| `exp`  | Expiration timestamp         | `1710252000`              |
+| `env`  | Environment identifier       | `"production"`            |
+| `ctx`  | **Fernet-encrypted** payload | `"gAAAAABl..."`           |
 
 ### Encrypted Context (`ctx`)
 
@@ -1100,10 +1110,10 @@ This is encrypted with `JWT_PAYLOAD_ENCRYPTION_KEY` using Fernet (AES-128-CBC), 
 
 ### Token Lifetimes
 
-| Token | Expiry | Purpose |
-|---|---|---|
-| Access Token | 3 weeks (30,240 minutes) | API authentication |
-| Refresh Token | 30 days | Obtain new access tokens |
+| Token         | Expiry                   | Purpose                  |
+| ------------- | ------------------------ | ------------------------ |
+| Access Token  | 3 weeks (30,240 minutes) | API authentication       |
+| Refresh Token | 30 days                  | Obtain new access tokens |
 
 ### Security Properties
 
@@ -1178,12 +1188,12 @@ For streaming endpoints needing < 200ms time-to-first-token:
 
 ### Multi-Org API Key Resolution
 
-| Scenario | Behavior |
-|---|---|
-| Single-org key, no requested org | Auto-infer from key's org |
-| Multi-org key, no requested org | **Reject** (ambiguous) |
-| Single-org key, with requested org | Validate match |
-| Multi-org key, with requested org | Validate org is in key's list |
+| Scenario                           | Behavior                      |
+| ---------------------------------- | ----------------------------- |
+| Single-org key, no requested org   | Auto-infer from key's org     |
+| Multi-org key, no requested org    | **Reject** (ambiguous)        |
+| Single-org key, with requested org | Validate match                |
+| Multi-org key, with requested org  | Validate org is in key's list |
 
 ---
 
@@ -1191,11 +1201,11 @@ For streaming endpoints needing < 200ms time-to-first-token:
 
 ### Base Roles (global, `organization_id = NULL`)
 
-| Role | Description |
-|---|---|
-| **Owner** | Complete control including billing |
-| **Admin** | Full access except billing |
-| **Member** | Read-only access |
+| Role       | Description                        |
+| ---------- | ---------------------------------- |
+| **Owner**  | Complete control including billing |
+| **Admin**  | Full access except billing         |
+| **Member** | Read-only access                   |
 
 ### Custom Roles
 
@@ -1218,42 +1228,42 @@ Alternative: `get_current_admin_user` in `deps.py` checks if `user.id` is in `se
 
 ## Security Features Summary
 
-| Feature | Implementation |
-|---|---|
-| Password hashing | bcrypt with auto-salt (12 rounds) |
-| JWT signing | HS256 (HMAC-SHA256) |
-| JWT payload encryption | Fernet (AES-128-CBC) |
-| 2FA | Email verification (4-digit code, 5-min expiry for login, 24hr for registration) |
-| Cross-environment protection | `env` claim in JWT, API key env prefix |
-| Login auditing | `LoginAttempt` model (IP, user agent, device, success/failure reason) |
-| Device tracking | `DeviceSession` model per user+device |
-| Token revocation | Per-token, per-device, or all-user revocation |
-| Password reset | Revokes all sessions, rate-limited (1/min), 5-min code expiry |
-| Email enumeration prevention | Password reset always returns success |
-| API key security | bcrypt hashed, prefix-based lookup, status lifecycle (active/paused/expired/deleted) |
-| Account protection | Deleted account check, inactive check, org membership blocklist |
-| Secrets management | `SecretStr` (Pydantic) for all sensitive config values |
-| Generic error messages | Login errors never reveal whether email/username exists |
+| Feature                      | Implementation                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| Password hashing             | bcrypt with auto-salt (12 rounds)                                                    |
+| JWT signing                  | HS256 (HMAC-SHA256)                                                                  |
+| JWT payload encryption       | Fernet (AES-128-CBC)                                                                 |
+| 2FA                          | Email verification (4-digit code, 5-min expiry for login, 24hr for registration)     |
+| Cross-environment protection | `env` claim in JWT, API key env prefix                                               |
+| Login auditing               | `LoginAttempt` model (IP, user agent, device, success/failure reason)                |
+| Device tracking              | `DeviceSession` model per user+device                                                |
+| Token revocation             | Per-token, per-device, or all-user revocation                                        |
+| Password reset               | Revokes all sessions, rate-limited (1/min), 5-min code expiry                        |
+| Email enumeration prevention | Password reset always returns success                                                |
+| API key security             | bcrypt hashed, prefix-based lookup, status lifecycle (active/paused/expired/deleted) |
+| Account protection           | Deleted account check, inactive check, org membership blocklist                      |
+| Secrets management           | `SecretStr` (Pydantic) for all sensitive config values                               |
+| Generic error messages       | Login errors never reveal whether email/username exists                              |
 
 ---
 
 ## API Endpoints Reference
 
-| Endpoint | Method | Auth | Purpose |
-|---|---|---|---|
-| `/auth/register` | POST | No | Create pending registration |
-| `/auth/login` | POST | No | Verify credentials, send email code |
-| `/auth/verify` | POST | No | Verify code, return tokens |
-| `/auth/refresh` | POST | No | Refresh access token |
-| `/auth/logout` | POST | Yes | Revoke tokens |
-| `/auth/password/reset` | POST | No | Request password reset code |
-| `/auth/password/reset/verify` | POST | No | Verify code + set new password |
-| `/auth/password/forgot` | POST | No | Alias for `/password/reset` |
-| `/auth/password/update` | PUT | Yes | Change password (authenticated) |
-| `/auth/validate-email` | POST | No | Check email availability + org match |
-| `/auth/resend-code` | POST | No | Resend verification code |
-| `/auth/validate` | GET | Yes | Check if current token is valid |
-| `/auth/dev-login` | POST | No | Dev-only login (local/develop/test) |
+| Endpoint                      | Method | Auth | Purpose                              |
+| ----------------------------- | ------ | ---- | ------------------------------------ |
+| `/auth/register`              | POST   | No   | Create pending registration          |
+| `/auth/login`                 | POST   | No   | Verify credentials, send email code  |
+| `/auth/verify`                | POST   | No   | Verify code, return tokens           |
+| `/auth/refresh`               | POST   | No   | Refresh access token                 |
+| `/auth/logout`                | POST   | Yes  | Revoke tokens                        |
+| `/auth/password/reset`        | POST   | No   | Request password reset code          |
+| `/auth/password/reset/verify` | POST   | No   | Verify code + set new password       |
+| `/auth/password/forgot`       | POST   | No   | Alias for `/password/reset`          |
+| `/auth/password/update`       | PUT    | Yes  | Change password (authenticated)      |
+| `/auth/validate-email`        | POST   | No   | Check email availability + org match |
+| `/auth/resend-code`           | POST   | No   | Resend verification code             |
+| `/auth/validate`              | GET    | Yes  | Check if current token is valid      |
+| `/auth/dev-login`             | POST   | No   | Dev-only login (local/develop/test)  |
 
 ---
 
@@ -1261,47 +1271,47 @@ Alternative: `get_current_admin_user` in `deps.py` checks if `user.id` is in `se
 
 ### Core Authentication
 
-| File | Purpose |
-|---|---|
-| `app/core/token_manager.py` | JWT encoding/decoding with Fernet encryption |
-| `app/core/security.py` | Token creation (access + refresh) |
-| `app/core/password.py` | bcrypt hashing and verification |
-| `app/core/password_validator.py` | Password strength validation rules |
-| `app/core/config.py` | All auth-related settings |
-| `app/core/error_codes.py` | Centralized error code registry |
+| File                             | Purpose                                      |
+| -------------------------------- | -------------------------------------------- |
+| `app/core/token_manager.py`      | JWT encoding/decoding with Fernet encryption |
+| `app/core/security.py`           | Token creation (access + refresh)            |
+| `app/core/password.py`           | bcrypt hashing and verification              |
+| `app/core/password_validator.py` | Password strength validation rules           |
+| `app/core/config.py`             | All auth-related settings                    |
+| `app/core/error_codes.py`        | Centralized error code registry              |
 
 ### Routes & Schemas
 
-| File | Purpose |
-|---|---|
-| `app/api/v1/routes/auth.py` | Auth endpoint definitions |
+| File                         | Purpose                          |
+| ---------------------------- | -------------------------------- |
+| `app/api/v1/routes/auth.py`  | Auth endpoint definitions        |
 | `app/api/v1/schemas/auth.py` | Request/response Pydantic models |
 
 ### Services
 
-| File | Purpose |
-|---|---|
-| `app/services/auth/auth_service.py` | Login, verify, refresh, logout |
-| `app/services/auth/registration_service.py` | User registration |
-| `app/services/auth/verification_service.py` | Email verification + resend |
-| `app/services/auth/password_service.py` | Password reset and update |
+| File                                        | Purpose                        |
+| ------------------------------------------- | ------------------------------ |
+| `app/services/auth/auth_service.py`         | Login, verify, refresh, logout |
+| `app/services/auth/registration_service.py` | User registration              |
+| `app/services/auth/verification_service.py` | Email verification + resend    |
+| `app/services/auth/password_service.py`     | Password reset and update      |
 
 ### Middleware & Dependencies
 
-| File | Purpose |
-|---|---|
-| `app/middleware/auth_context_middleware.py` | ASGI middleware (sets request.state) |
-| `app/api/middleware/api_key_auth.py` | API key validation logic |
-| `app/api/v1/utils/auth_utils.py` | AuthContext, get_auth_context, org access verification |
-| `app/api/deps.py` | FastAPI dependencies (get_current_user, authenticate_token) |
+| File                                        | Purpose                                                     |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| `app/middleware/auth_context_middleware.py` | ASGI middleware (sets request.state)                        |
+| `app/api/middleware/api_key_auth.py`        | API key validation logic                                    |
+| `app/api/v1/utils/auth_utils.py`            | AuthContext, get_auth_context, org access verification      |
+| `app/api/deps.py`                           | FastAPI dependencies (get_current_user, authenticate_token) |
 
 ### Models
 
-| File | Purpose |
-|---|---|
-| `app/services/db/models/user.py` | User model (`usr_` prefix) |
-| `app/services/db/models/refresh_token.py` | Refresh token model (`rtok_` prefix) |
-| `app/services/db/models/role.py` | Role model (`role_` prefix) |
-| `app/services/db/models/organization_api_key.py` | API key model (`ak_` prefix) |
-| `app/services/db/models/organization_user.py` | User-organization membership |
-| `app/services/db/models/login_attempt.py` | Login audit log |
+| File                                             | Purpose                              |
+| ------------------------------------------------ | ------------------------------------ |
+| `app/services/db/models/user.py`                 | User model (`usr_` prefix)           |
+| `app/services/db/models/refresh_token.py`        | Refresh token model (`rtok_` prefix) |
+| `app/services/db/models/role.py`                 | Role model (`role_` prefix)          |
+| `app/services/db/models/organization_api_key.py` | API key model (`ak_` prefix)         |
+| `app/services/db/models/organization_user.py`    | User-organization membership         |
+| `app/services/db/models/login_attempt.py`        | Login audit log                      |

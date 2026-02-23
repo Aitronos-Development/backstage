@@ -98,17 +98,18 @@ Appends a new test case to the route group file. Generates an `id`, sets `create
 The core editing tool, modeled after Claude Code's `Edit` tool:
 
 **Field targeting:**
+
 - `field` must be one of: `name`, `method`, `path`, `headers`, `body`, `assertions`
 - The tool operates only on the specified field, leaving everything else untouched
 
 **Replacement modes:**
 
-| `merge` | `old_value` | Behavior |
-| --- | --- | --- |
-| `false` | absent | Replaces the entire field with `new_value` |
-| `false` | present | Finds `old_value` within the field, replaces first occurrence (or all if `replace_all: true`) with `new_value` |
-| `true` | absent | Deep-merges `new_value` into the existing field (field must be an object) |
-| `true` | present | Validates `old_value` matches current state, then deep-merges `new_value` |
+| `merge` | `old_value` | Behavior                                                                                                       |
+| ------- | ----------- | -------------------------------------------------------------------------------------------------------------- |
+| `false` | absent      | Replaces the entire field with `new_value`                                                                     |
+| `false` | present     | Finds `old_value` within the field, replaces first occurrence (or all if `replace_all: true`) with `new_value` |
+| `true`  | absent      | Deep-merges `new_value` into the existing field (field must be an object)                                      |
+| `true`  | present     | Validates `old_value` matches current state, then deep-merges `new_value`                                      |
 
 **Optimistic concurrency:**
 When `old_value` is provided, the tool compares it against the current field value. If they don't match, the edit is rejected with an error message showing the actual current value — forcing the agent to re-read before retrying. This prevents stale overwrites.
@@ -116,6 +117,7 @@ When `old_value` is provided, the tool compares it against the current field val
 **Example scenarios:**
 
 1. **Change a single header:**
+
    ```json
    {
      "field": "headers",
@@ -124,9 +126,11 @@ When `old_value` is provided, the tool compares it against the current field val
      "merge": true
    }
    ```
+
    Result: Only `Authorization` header changes. All other headers preserved.
 
 2. **Update expected status code:**
+
    ```json
    {
      "field": "assertions",
@@ -135,6 +139,7 @@ When `old_value` is provided, the tool compares it against the current field val
      "merge": true
    }
    ```
+
    Result: Only `status_code` changes. `body_contains` and `body_schema` preserved.
 
 3. **Replace a string in the body:**
@@ -192,9 +197,9 @@ A fully functional test case management system accessible through MCP tools. Age
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| Concurrent writes from multiple agents | File corruption | Atomic writes + in-memory locking per route group file |
-| Deep merge edge cases (arrays, nested nulls) | Unexpected edits | Use a well-tested merge library (e.g., `deepmerge`); document merge semantics |
-| `fs.watch` unreliable on some platforms | UI doesn't update | Fall back to polling with 1s interval; abstract behind the watcher interface |
-| Large test suites slow down file I/O | Latency on read/write | Unlikely for test case files; add lazy loading if needed |
+| Risk                                         | Impact                | Mitigation                                                                    |
+| -------------------------------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| Concurrent writes from multiple agents       | File corruption       | Atomic writes + in-memory locking per route group file                        |
+| Deep merge edge cases (arrays, nested nulls) | Unexpected edits      | Use a well-tested merge library (e.g., `deepmerge`); document merge semantics |
+| `fs.watch` unreliable on some platforms      | UI doesn't update     | Fall back to polling with 1s interval; abstract behind the watcher interface  |
+| Large test suites slow down file I/O         | Latency on read/write | Unlikely for test case files; add lazy loading if needed                      |

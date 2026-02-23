@@ -47,6 +47,7 @@ const ALLOWLIST = new Set([
   'scripts',
 
   // API testing
+  '.api-testing-history',
   'api-tests',
   'test-repositories',
 
