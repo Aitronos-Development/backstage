@@ -33,6 +33,7 @@ import {
   invalidateCache,
 } from './fileStore';
 import * as historyStore from './historyStore';
+import * as environmentStore from './environmentStore';
 import { buildExecutionRecord } from './historyStore';
 import {
   resolveVariables,
@@ -45,9 +46,20 @@ export interface RouterOptions {
   config: RootConfigService;
 }
 
+interface SetupStep {
+  name: string;
+  method: string;
+  path: string;
+  headers?: Record<string, string>;
+  body?: Record<string, unknown>;
+  capture: Record<string, string>; // varName -> responseJsonPath
+  allowFailure?: boolean; // if true, step failure is logged but doesn't abort
+}
+
 interface ApiTestingEnvironment {
   baseUrl: string;
   variables: Record<string, string>;
+  setup?: SetupStep[];
 }
 
 interface ApiTestingConfig {
@@ -61,35 +73,224 @@ function readApiTestingConfig(config: RootConfigService): ApiTestingConfig {
     environments: {},
   };
 
-  try {
-    const section = config.getOptionalConfig('apiTesting');
-    if (!section) return result;
+  const section = config.getOptionalConfig('apiTesting');
+  if (!section) return result;
 
-    result.defaultEnvironment =
-      section.getOptionalString('defaultEnvironment') ?? 'develop';
+  result.defaultEnvironment =
+    section.getOptionalString('defaultEnvironment') ?? 'develop';
 
-    const envsConfig = section.getOptionalConfig('environments');
-    if (envsConfig) {
-      for (const envName of envsConfig.keys()) {
-        const envSection = envsConfig.getConfig(envName);
-        const baseUrl = envSection.getOptionalString('baseUrl') ?? '';
-        const vars: Record<string, string> = {};
+  const envsConfig = section.getOptionalConfig('environments');
+  if (!envsConfig) return result;
 
-        const varsSection = envSection.getOptionalConfig('variables');
-        if (varsSection) {
-          for (const key of varsSection.keys()) {
-            vars[key] = varsSection.getString(key);
-          }
+  for (const envName of envsConfig.keys()) {
+    try {
+      const envSection = envsConfig.getConfig(envName);
+      const baseUrl = envSection.getOptionalString('baseUrl') ?? '';
+      const vars: Record<string, string> = {};
+
+      const varsSection = envSection.getOptionalConfig('variables');
+      if (varsSection) {
+        for (const key of varsSection.keys()) {
+          const raw = varsSection.getOptional(key);
+          vars[key] = raw != null ? String(raw) : '';
         }
-
-        result.environments[envName] = { baseUrl, variables: vars };
       }
+
+      // Parse setup steps
+      const setupSteps: SetupStep[] = [];
+      const setupConfig = envSection.getOptionalConfigArray('setup');
+      if (setupConfig) {
+        for (const stepSection of setupConfig) {
+          const capture: Record<string, string> = {};
+          const captureSection =
+            stepSection.getOptionalConfig('capture');
+          if (captureSection) {
+            for (const k of captureSection.keys()) {
+              capture[k] = captureSection.getString(k);
+            }
+          }
+
+          const body: Record<string, unknown> = {};
+          const bodySection = stepSection.getOptionalConfig('body');
+          if (bodySection) {
+            for (const k of bodySection.keys()) {
+              // Use raw accessor to avoid Backstage config type coercion errors
+              const raw = bodySection.getOptional(k);
+              if (raw !== undefined) {
+                body[k] = raw; // preserves native types (number, boolean, string)
+              }
+            }
+          }
+
+          const stepHeaders: Record<string, string> = {};
+          const headersSection =
+            stepSection.getOptionalConfig('headers');
+          if (headersSection) {
+            for (const k of headersSection.keys()) {
+              stepHeaders[k] = headersSection.getString(k);
+            }
+          }
+
+          const allowFailure =
+            stepSection.getOptionalBoolean('allowFailure') ?? false;
+
+          setupSteps.push({
+            name: stepSection.getString('name'),
+            method: stepSection.getString('method'),
+            path: stepSection.getString('path'),
+            ...(Object.keys(stepHeaders).length > 0 && {
+              headers: stepHeaders,
+            }),
+            ...(Object.keys(body).length > 0 && { body }),
+            capture,
+            ...(allowFailure && { allowFailure }),
+          });
+        }
+      }
+
+      result.environments[envName] = {
+        baseUrl,
+        variables: vars,
+        ...(setupSteps.length > 0 && { setup: setupSteps }),
+      };
+    } catch (err) {
+      // Log but continue parsing other environments
+      console.error(
+        `[api-testing] Failed to parse environment '${envName}':`,
+        err instanceof Error ? err.message : err,
+      );
     }
-  } catch {
-    // Config section missing or malformed — use defaults
   }
 
   return result;
+}
+
+/**
+ * Extract a value from a JSON object using a dot-notation path.
+ * e.g. "access_token" → obj.access_token
+ *      "data.org_id"  → obj.data.org_id
+ */
+function extractJsonPath(obj: unknown, path: string): unknown {
+  let current: unknown = obj;
+  for (const segment of path.split('.')) {
+    if (current == null || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+}
+
+// Cache setup results per environment to avoid re-authenticating on every run
+const SETUP_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const setupCache = new Map<
+  string,
+  { variables: Record<string, string>; expiresAt: number }
+>();
+
+/**
+ * Execute environment-level setup steps (e.g. authenticate, create test data).
+ * Each step is an HTTP call whose response values can be captured as variables.
+ * Steps run sequentially; later steps can use variables captured by earlier ones.
+ * Results are cached per environment for SETUP_CACHE_TTL_MS.
+ */
+async function executeSetupSteps(
+  envName: string,
+  steps: SetupStep[],
+  baseUrl: string,
+  baseVariables: Record<string, string>,
+  logger: LoggerService,
+): Promise<Record<string, string>> {
+  // Check cache
+  const cached = setupCache.get(envName);
+  if (cached && Date.now() < cached.expiresAt) {
+    logger.info(`Using cached setup variables for environment '${envName}'`);
+    return { ...cached.variables };
+  }
+
+  const variables = { ...baseVariables };
+
+  for (const step of steps) {
+    const resolvedPath = resolveVariables(step.path, variables) as string;
+    const url = `${baseUrl}${resolvedPath}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (step.headers) {
+      const resolved = resolveVariables(step.headers, variables) as Record<
+        string,
+        unknown
+      >;
+      for (const [k, v] of Object.entries(resolved)) {
+        headers[k] = String(v);
+      }
+    }
+
+    const fetchOptions: RequestInit = {
+      method: step.method,
+      headers,
+    };
+
+    if (step.body && ['POST', 'PUT', 'PATCH'].includes(step.method)) {
+      const resolvedBody = resolveVariables(
+        step.body as Record<string, unknown>,
+        variables,
+      );
+      fetchOptions.body = JSON.stringify(resolvedBody);
+    }
+
+    try {
+      logger.info(`Setup step '${step.name}': ${step.method} ${url}`);
+      const response = await fetch(url, {
+        ...fetchOptions,
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(
+          `HTTP ${response.status}: ${text.slice(0, 200)}`,
+        );
+      }
+
+      const body = await response.json();
+
+      // Capture values from response
+      for (const [varName, jsonPath] of Object.entries(step.capture)) {
+        const value = extractJsonPath(body, jsonPath);
+        if (value !== undefined && value !== null) {
+          variables[varName] = String(value);
+          logger.info(
+            `Setup step '${step.name}': captured '${varName}' from '${jsonPath}'`,
+          );
+        } else {
+          logger.warn(
+            `Setup step '${step.name}': path '${jsonPath}' not found in response for variable '${varName}'`,
+          );
+        }
+      }
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : String(err);
+      if (step.allowFailure) {
+        logger.warn(
+          `Setup step '${step.name}' failed (allowFailure=true, continuing): ${message}`,
+        );
+      } else {
+        logger.error(`Setup step '${step.name}' failed: ${message}`);
+        throw new Error(
+          `Environment setup step '${step.name}' failed: ${message}`,
+        );
+      }
+    }
+  }
+
+  // Cache the result
+  setupCache.set(envName, {
+    variables: { ...variables },
+    expiresAt: Date.now() + SETUP_CACHE_TTL_MS,
+  });
+
+  return variables;
 }
 
 interface ExecutionResult {
@@ -128,7 +329,45 @@ export async function createRouter(
 ): Promise<express.Router> {
   const { logger, config } = options;
   const router = Router();
-  const apiTestingConfig = readApiTestingConfig(config);
+  // Re-read on every call so app-config.yaml changes (e.g. new setup steps)
+  // are picked up without a backend restart. Reads from the in-memory config
+  // service, so the overhead is negligible.
+  // Merges: app-config.yaml (base) → environments.json (user overrides)
+  const getApiTestingConfig = (): ApiTestingConfig => {
+    const base = readApiTestingConfig(config);
+    const overrides = environmentStore.readOverrides();
+
+    const result: ApiTestingConfig = {
+      defaultEnvironment: overrides.defaultEnvironment ?? base.defaultEnvironment,
+      environments: {},
+    };
+
+    // Start with all app-config environments (includes setup steps)
+    for (const [name, env] of Object.entries(base.environments)) {
+      result.environments[name] = { ...env };
+    }
+
+    // Apply JSON overrides on top (baseUrl + variables only, never setup)
+    for (const [name, override] of Object.entries(overrides.environments)) {
+      if (result.environments[name]) {
+        if (override.baseUrl) {
+          result.environments[name].baseUrl = override.baseUrl;
+        }
+        result.environments[name].variables = {
+          ...result.environments[name].variables,
+          ...override.variables,
+        };
+      } else {
+        // New environment from JSON only (no setup steps)
+        result.environments[name] = {
+          baseUrl: override.baseUrl,
+          variables: override.variables,
+        };
+      }
+    }
+
+    return result;
+  };
   router.use(express.json());
 
   // --- WebSocket setup ---
@@ -221,7 +460,40 @@ export async function createRouter(
 
   // --- API Testing config (environments + variables) ---
   router.get('/config', (_, res) => {
-    res.json(apiTestingConfig);
+    res.json(getApiTestingConfig());
+  });
+
+  // --- Environment overrides CRUD ---
+  router.get('/config/overrides', (_, res) => {
+    res.json(environmentStore.readOverrides());
+  });
+
+  router.put('/config/environments/:envName', (req, res) => {
+    const { envName } = req.params;
+    const { baseUrl, variables } = req.body;
+    if (typeof baseUrl !== 'string') {
+      throw new InputError('baseUrl is required and must be a string');
+    }
+    environmentStore.putEnvironment(envName, {
+      baseUrl,
+      variables: variables ?? {},
+    });
+    res.json({ ok: true });
+  });
+
+  router.delete('/config/environments/:envName', (req, res) => {
+    const { envName } = req.params;
+    environmentStore.deleteEnvironment(envName);
+    res.json({ ok: true });
+  });
+
+  router.put('/config/default-environment', (req, res) => {
+    const { environment } = req.body;
+    if (typeof environment !== 'string' || !environment) {
+      throw new InputError('environment is required');
+    }
+    environmentStore.setDefaultEnvironment(environment);
+    res.json({ ok: true });
   });
 
   // --- Extract variable placeholders from a test case ---
@@ -292,13 +564,25 @@ export async function createRouter(
       );
     }
 
-    // Build merged variables: app-config environment < caller-provided
-    const envName = environment || apiTestingConfig.defaultEnvironment;
-    const envConfig = apiTestingConfig.environments[envName];
-    const mergedVariables: Record<string, string> = {};
+    // Build merged variables: app-config environment < setup captures < caller-provided
+    const currentConfig = getApiTestingConfig();
+    const envName = environment || currentConfig.defaultEnvironment;
+    const envConfig = currentConfig.environments[envName];
+    let mergedVariables: Record<string, string> = {};
     if (envConfig) {
       if (envConfig.baseUrl) mergedVariables.base_url = envConfig.baseUrl;
       Object.assign(mergedVariables, envConfig.variables);
+
+      // Run environment setup steps (e.g. authenticate)
+      if (envConfig.setup && envConfig.setup.length > 0) {
+        mergedVariables = await executeSetupSteps(
+          envName,
+          envConfig.setup,
+          envConfig.baseUrl,
+          mergedVariables,
+          logger,
+        );
+      }
     }
     Object.assign(mergedVariables, variables || {});
 
@@ -370,13 +654,25 @@ export async function createRouter(
       throw new InputError('routeGroup is required');
     }
 
-    // Build merged variables: app-config environment < caller-provided
-    const envName = environment || apiTestingConfig.defaultEnvironment;
-    const envConfig = apiTestingConfig.environments[envName];
-    const mergedVariables: Record<string, string> = {};
+    // Build merged variables: app-config environment < setup captures < caller-provided
+    const currentConfig = getApiTestingConfig();
+    const envName = environment || currentConfig.defaultEnvironment;
+    const envConfig = currentConfig.environments[envName];
+    let mergedVariables: Record<string, string> = {};
     if (envConfig) {
       if (envConfig.baseUrl) mergedVariables.base_url = envConfig.baseUrl;
       Object.assign(mergedVariables, envConfig.variables);
+
+      // Run environment setup steps (e.g. authenticate)
+      if (envConfig.setup && envConfig.setup.length > 0) {
+        mergedVariables = await executeSetupSteps(
+          envName,
+          envConfig.setup,
+          envConfig.baseUrl,
+          mergedVariables,
+          logger,
+        );
+      }
     }
     Object.assign(mergedVariables, variables || {});
 

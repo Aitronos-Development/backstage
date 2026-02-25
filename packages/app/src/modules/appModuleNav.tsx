@@ -31,6 +31,7 @@ import BuildIcon from '@material-ui/icons/Build';
 import CategoryIcon from '@material-ui/icons/Category';
 import LibraryBooksIcon from '@material-ui/icons/LibraryBooks';
 import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
+import BugReportIcon from '@material-ui/icons/BugReport';
 import Brightness2Icon from '@material-ui/icons/Brightness2';
 import WbSunnyIcon from '@material-ui/icons/WbSunny';
 import { createFrontendModule } from '@backstage/frontend-plugin-api';
@@ -169,6 +170,11 @@ export const appModuleNav = createFrontendModule({
                   icon={PlaylistPlayIcon}
                   to="api-testing"
                   text="API Testing"
+                />
+                <SidebarItem
+                  icon={BugReportIcon}
+                  to="bug-manager"
+                  text="Bug Manager"
                 />
               </SidebarGroup>
               <SidebarDivider />

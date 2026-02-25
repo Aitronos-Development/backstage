@@ -42,6 +42,7 @@ import { FlatRoutes } from '@backstage/core-app-api';
 import { Route, Navigate } from 'react-router';
 import { CatalogImportPage } from '@backstage/plugin-catalog-import';
 import { ApiTestingPage } from './components/ApiTestingPage';
+import { BugManagerPage } from '@internal/plugin-bug-manager';
 import kubernetesPlugin from '@backstage/plugin-kubernetes/alpha';
 import { convertLegacyPlugin } from '@backstage/core-compat-api';
 import { convertLegacyPageExtension } from '@backstage/core-compat-api';
@@ -166,6 +167,7 @@ const collectedLegacyPlugins = convertLegacyAppRoot(
     <Route path="/" element={<Navigate to="/home" replace />} />
     <Route path="/catalog-import" element={<CatalogImportPage />} />
     <Route path="/api-testing" element={<ApiTestingPage />} />
+    <Route path="/bug-manager" element={<BugManagerPage />} />
   </FlatRoutes>,
 );
 

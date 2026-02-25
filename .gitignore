@@ -207,5 +207,6 @@ app-config.*.yaml
 # Compliance reports
 compliance_reports/
 
-# API testing execution history
+# API testing execution history and config
 .api-testing-history/
+.api-testing-config/

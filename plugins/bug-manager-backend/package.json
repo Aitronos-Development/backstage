@@ -1,0 +1,43 @@
+{
+  "name": "@internal/plugin-bug-manager-backend",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/backstage/backstage",
+    "directory": "plugins/bug-manager-backend"
+  },
+  "backstage": {
+    "role": "backend-plugin",
+    "pluginId": "bug-manager",
+    "pluginPackages": [
+      "@internal/plugin-bug-manager",
+      "@internal/plugin-bug-manager-backend"
+    ]
+  },
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "backstage-cli package build",
+    "clean": "backstage-cli package clean",
+    "lint": "backstage-cli package lint",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack",
+    "start": "backstage-cli package start",
+    "test": "backstage-cli package test"
+  },
+  "dependencies": {
+    "@backstage/backend-plugin-api": "workspace:^",
+    "@backstage/plugin-catalog-node": "workspace:^",
+    "express": "^4.18.0",
+    "knex": "^3.0.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@backstage/backend-test-utils": "workspace:^",
+    "@backstage/cli": "workspace:^"
+  }
+}

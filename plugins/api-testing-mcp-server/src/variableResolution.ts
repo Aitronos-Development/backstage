@@ -90,9 +90,20 @@ function resolveObject(
   return resolved;
 }
 
+interface SetupStep {
+  name: string;
+  method: string;
+  path: string;
+  headers?: Record<string, string>;
+  body?: Record<string, unknown>;
+  capture: Record<string, string>; // varName -> responseJsonPath
+  allowFailure?: boolean; // if true, step failure is logged but doesn't abort
+}
+
 interface ApiTestingEnvironment {
   baseUrl: string;
   variables: Record<string, string>;
+  setup?: SetupStep[];
 }
 
 interface ApiTestingConfig {
@@ -142,9 +153,24 @@ export function readAppConfig(): ApiTestingConfig {
       | undefined;
     if (envs) {
       for (const [name, env] of Object.entries(envs)) {
+        const setupRaw = env.setup as Array<Record<string, unknown>> | undefined;
+        const setup: SetupStep[] | undefined = setupRaw?.map(s => {
+          const step: SetupStep = {
+            name: (s.name as string) ?? '',
+            method: (s.method as string) ?? 'GET',
+            path: (s.path as string) ?? '',
+            capture: (s.capture as Record<string, string>) ?? {},
+          };
+          if (s.headers) step.headers = s.headers as Record<string, string>;
+          if (s.body) step.body = s.body as Record<string, unknown>;
+          if (s.allowFailure) step.allowFailure = true;
+          return step;
+        });
+
         result.environments[name] = {
           baseUrl: (env.baseUrl as string) ?? '',
           variables: (env.variables as Record<string, string>) ?? {},
+          ...(setup && setup.length > 0 && { setup }),
         };
       }
     }
@@ -156,20 +182,146 @@ export function readAppConfig(): ApiTestingConfig {
 }
 
 /**
- * Build the merged variables map for MCP execution:
- * app-config environment variables < variable_overrides
+ * Extract a value from a JSON object using a dot-notation path.
+ * e.g. "access_token" → obj.access_token
+ *      "data.org_id"  → obj.data.org_id
  */
-export function buildMcpVariables(
+function extractJsonPath(obj: unknown, jsonPath: string): unknown {
+  let current: unknown = obj;
+  for (const segment of jsonPath.split('.')) {
+    if (current == null || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+}
+
+// Cache setup results per environment to avoid re-authenticating on every run
+const SETUP_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const setupCache = new Map<
+  string,
+  { variables: Record<string, string>; expiresAt: number }
+>();
+
+/**
+ * Execute environment-level setup steps (e.g. authenticate, create test data).
+ * Each step is an HTTP call whose response values can be captured as variables.
+ * Steps run sequentially; later steps can use variables captured by earlier ones.
+ * Results are cached per environment for SETUP_CACHE_TTL_MS.
+ */
+async function executeSetupSteps(
+  envName: string,
+  steps: SetupStep[],
+  baseUrl: string,
+  baseVariables: Record<string, string>,
+): Promise<Record<string, string>> {
+  // Check cache
+  const cached = setupCache.get(envName);
+  if (cached && Date.now() < cached.expiresAt) {
+    return { ...cached.variables };
+  }
+
+  const variables = { ...baseVariables };
+
+  for (const step of steps) {
+    const resolvedPath = resolveVariables(step.path, variables) as string;
+    const url = `${baseUrl}${resolvedPath}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (step.headers) {
+      const resolved = resolveVariables(step.headers, variables) as Record<
+        string,
+        unknown
+      >;
+      for (const [k, v] of Object.entries(resolved)) {
+        headers[k] = String(v);
+      }
+    }
+
+    const fetchOptions: RequestInit = {
+      method: step.method,
+      headers,
+    };
+
+    if (step.body && ['POST', 'PUT', 'PATCH'].includes(step.method)) {
+      const resolvedBody = resolveVariables(
+        step.body as Record<string, unknown>,
+        variables,
+      );
+      fetchOptions.body = JSON.stringify(resolvedBody);
+    }
+
+    try {
+      const response = await fetch(url, {
+        ...fetchOptions,
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text.slice(0, 200)}`);
+      }
+
+      const body = await response.json();
+
+      // Capture values from response
+      for (const [varName, jsonPathStr] of Object.entries(step.capture)) {
+        const value = extractJsonPath(body, jsonPathStr);
+        if (value !== undefined && value !== null) {
+          variables[varName] = String(value);
+        }
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (step.allowFailure) {
+        // Step is optional (e.g. register may fail if user already exists)
+        // Log and continue to next step
+        console.warn(
+          `Setup step '${step.name}' failed (allowFailure=true, continuing): ${message}`,
+        );
+      } else {
+        throw new Error(
+          `Environment setup step '${step.name}' failed: ${message}`,
+        );
+      }
+    }
+  }
+
+  // Cache the result
+  setupCache.set(envName, {
+    variables: { ...variables },
+    expiresAt: Date.now() + SETUP_CACHE_TTL_MS,
+  });
+
+  return variables;
+}
+
+/**
+ * Build the merged variables map for MCP execution:
+ * app-config environment variables < setup captures < variable_overrides
+ */
+export async function buildMcpVariables(
   overrides?: Record<string, string>,
-): Record<string, string> {
+): Promise<Record<string, string>> {
   const config = readAppConfig();
   const envName = config.defaultEnvironment;
   const envConfig = config.environments[envName];
-  const merged: Record<string, string> = {};
+  let merged: Record<string, string> = {};
 
   if (envConfig) {
     if (envConfig.baseUrl) merged.base_url = envConfig.baseUrl;
     Object.assign(merged, envConfig.variables);
+
+    // Run environment setup steps (e.g. authenticate)
+    if (envConfig.setup && envConfig.setup.length > 0) {
+      merged = await executeSetupSteps(
+        envName,
+        envConfig.setup,
+        envConfig.baseUrl,
+        merged,
+      );
+    }
   }
 
   if (overrides) {

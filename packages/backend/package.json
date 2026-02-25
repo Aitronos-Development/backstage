@@ -67,6 +67,7 @@
     "@backstage/plugin-signals-backend": "workspace:^",
     "@backstage/plugin-techdocs-backend": "workspace:^",
     "@internal/plugin-api-testing-backend": "workspace:^",
+    "@internal/plugin-bug-manager-backend": "workspace:^",
     "@opentelemetry/auto-instrumentations-node": "^0.67.0",
     "@opentelemetry/exporter-prometheus": "^0.211.0",
     "@opentelemetry/sdk-node": "^0.211.0",

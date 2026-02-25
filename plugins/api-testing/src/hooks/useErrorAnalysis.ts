@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 import { useMemo } from 'react';
-import type { TestStatus, ExecutionResult } from '../api/types';
+import type { TestStatus, ExecutionResult, FlowMetadata } from '../api/types';
 
 interface UseErrorAnalysisOptions {
   method: string;
+  path: string;
+  body?: Record<string, unknown>;
+  flowMetadata?: FlowMetadata;
   status: TestStatus;
   result?: ExecutionResult;
   error?: string;
@@ -34,6 +37,9 @@ interface UseErrorAnalysisOptions {
  */
 export function useErrorAnalysis({
   method,
+  path,
+  body,
+  flowMetadata,
   status,
   result,
   error,
@@ -45,19 +51,121 @@ export function useErrorAnalysis({
 
     // Path A: network / parse error (no result object)
     if (error && !result) {
-      return error;
+      let enrichedError = error;
+      if (error.includes('setup step')) {
+        enrichedError += '\n\nHint: Check that the target API is running and the setup credentials in app-config.yaml are correct.';
+      } else if (error.includes("not found in any layer")) {
+        enrichedError += '\n\nHint: A variable could not be resolved. Check that environment setup steps in app-config.yaml are capturing it correctly.';
+      }
+      return isFlow
+        ? formatFlowRequest(enrichedError, path, flowMetadata, result)
+        : formatWithRequest(enrichedError, method, path, body);
     }
 
     if (!result) return null;
 
     // Path B: FLOW test — extract key failure from pytest output
     if (isFlow) {
-      return extractFlowSummary(result);
+      return formatFlowRequest(extractFlowSummary(result), path, flowMetadata, result);
     }
 
     // Path C: HTTP test — structured assertion failures
-    return extractHttpSummary(result, error);
-  }, [method, status, result, error]);
+    return formatWithRequest(extractHttpSummary(result, error), method, path, body);
+  }, [method, path, body, flowMetadata, status, result, error]);
+}
+
+/** Prepend a compact request section to an HTTP error summary. */
+function formatWithRequest(
+  errorSummary: string,
+  method: string,
+  path: string,
+  body: Record<string, unknown> | undefined,
+): string {
+  const parts: string[] = [];
+
+  parts.push(`${method} ${path}`);
+
+  if (body && Object.keys(body).length > 0) {
+    const bodyStr = JSON.stringify(body);
+    const truncated =
+      bodyStr.length > 200 ? `${bodyStr.slice(0, 200)}...` : bodyStr;
+    parts.push(`Body: ${truncated}`);
+  }
+
+  return `${parts.join('\n')}\n---\n${errorSummary}`;
+}
+
+/** Prepend flow test context (file, failed step) to the error summary. */
+function formatFlowRequest(
+  errorSummary: string,
+  testPath: string,
+  flowMetadata: FlowMetadata | undefined,
+  result: ExecutionResult | undefined,
+): string {
+  const parts: string[] = [];
+
+  if (flowMetadata?.file) {
+    parts.push(`File: ${flowMetadata.file}`);
+  }
+  parts.push(`Test: ${testPath}`);
+
+  // Identify which step failed
+  if (flowMetadata?.steps && flowMetadata.steps.length > 0 && result) {
+    const failedIdx = inferFailedStepIndex(flowMetadata.steps, result);
+    if (failedIdx >= 0 && failedIdx < flowMetadata.steps.length) {
+      parts.push(
+        `Failed at step ${failedIdx + 1}/${flowMetadata.steps.length}: ${flowMetadata.steps[failedIdx]}`,
+      );
+    }
+  }
+
+  return `${parts.join('\n')}\n---\n${errorSummary}`;
+}
+
+/**
+ * Given a test result and step names, figure out which step failed.
+ * Mirrors the logic in FlowStepsPipeline.
+ */
+function inferFailedStepIndex(
+  steps: string[],
+  result: ExecutionResult,
+): number {
+  if (result.pass) return -1;
+
+  const output =
+    typeof result.details.responseBody === 'string'
+      ? result.details.responseBody
+      : '';
+
+  const failureSection = output
+    .split('\n')
+    .filter(
+      l =>
+        l.includes('FAILED') ||
+        l.includes('AssertionError') ||
+        l.includes('assert ') ||
+        l.includes('Error'),
+    )
+    .join(' ');
+
+  for (let i = steps.length - 1; i >= 0; i--) {
+    if (failureSection.includes(steps[i])) {
+      return i;
+    }
+  }
+
+  if (output.includes('steps_completed')) {
+    for (let i = steps.length - 1; i >= 0; i--) {
+      const thisFound = output.includes(`"${steps[i]}"`);
+      const nextFound =
+        i < steps.length - 1 && output.includes(`"${steps[i + 1]}"`);
+      if (thisFound && !nextFound && i < steps.length - 1) {
+        return i + 1;
+      }
+    }
+  }
+
+  return steps.length - 1;
 }
 
 /** Pull the most relevant failure line(s) from pytest output. */

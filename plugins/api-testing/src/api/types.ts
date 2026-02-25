@@ -72,7 +72,17 @@ export interface ApiTestingConfig {
   environments: Record<string, ApiTestingEnvironment>;
 }
 
-export type VariableSource = 'app-config' | 'localStorage' | 'runtime';
+export interface EnvironmentOverride {
+  baseUrl: string;
+  variables: Record<string, string>;
+}
+
+export interface EnvironmentOverrides {
+  defaultEnvironment?: string;
+  environments: Record<string, EnvironmentOverride>;
+}
+
+export type VariableSource = 'app-config' | 'saved' | 'runtime';
 
 export interface ResolvedVariable {
   key: string;

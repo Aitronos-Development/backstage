@@ -77,6 +77,7 @@ backend.add(rootSystemMetadataServiceFactory);
 backend.add(import('@backstage/plugin-events-backend-module-google-pubsub'));
 backend.add(import('@backstage/plugin-mcp-actions-backend'));
 backend.add(import('@internal/plugin-api-testing-backend'));
+backend.add(import('@internal/plugin-bug-manager-backend'));
 
 // Start API Testing MCP server alongside the backend
 /* eslint-disable no-restricted-syntax -- dev-only example backend spawning MCP server */

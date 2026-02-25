@@ -17,25 +17,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApiTestingClient } from './useTestCases';
 import type {
   ApiTestingConfig,
+  EnvironmentOverrides,
   ResolvedVariable,
   VariableSource,
 } from '../api/types';
 
-const LOCAL_STORAGE_KEY = 'backstage:api-testing:variables';
 const ENVIRONMENT_STORAGE_KEY = 'backstage:api-testing:environment';
-
-function readLocalStorageVars(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeLocalStorageVars(vars: Record<string, string>): void {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(vars));
-}
 
 function readSelectedEnvironment(): string | null {
   return localStorage.getItem(ENVIRONMENT_STORAGE_KEY);
@@ -48,8 +35,7 @@ function writeSelectedEnvironment(env: string): void {
 export function useVariables() {
   const client = useApiTestingClient();
   const [config, setConfig] = useState<ApiTestingConfig | null>(null);
-  const [localOverrides, setLocalOverrides] =
-    useState<Record<string, string>>(readLocalStorageVars);
+  const [overrides, setOverrides] = useState<EnvironmentOverrides | null>(null);
   const [runtimeOverrides, setRuntimeOverrides] = useState<
     Record<string, string>
   >({});
@@ -58,26 +44,37 @@ export function useVariables() {
   );
   const [loading, setLoading] = useState(true);
 
-  // Fetch config from backend (run once on mount)
+  // Fetch config + overrides from backend
+  const fetchAll = useCallback(async () => {
+    try {
+      const [cfg, ovr] = await Promise.all([
+        client.getConfig(),
+        client.getConfigOverrides(),
+      ]);
+      setConfig(cfg);
+      setOverrides(ovr);
+      return cfg;
+    } catch {
+      return null;
+    }
+  }, [client]);
+
+  // Initial fetch on mount
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const cfg = await client.getConfig();
-        if (!cancelled) {
-          setConfig(cfg);
-          // Set default environment if not yet selected
-          setSelectedEnvironmentState(
-            prev =>
-              prev ||
-              cfg.defaultEnvironment ||
-              Object.keys(cfg.environments)[0] ||
-              '',
-          );
-          setLoading(false);
-        }
-      } catch {
-        if (!cancelled) setLoading(false);
+      const cfg = await fetchAll();
+      if (!cancelled && cfg) {
+        setSelectedEnvironmentState(
+          prev =>
+            prev ||
+            cfg.defaultEnvironment ||
+            Object.keys(cfg.environments)[0] ||
+            '',
+        );
+        setLoading(false);
+      } else if (!cancelled) {
+        setLoading(false);
       }
     })();
     return () => {
@@ -99,7 +96,7 @@ export function useVariables() {
     writeSelectedEnvironment(env);
   }, []);
 
-  // Config variables for the active environment
+  // Config variables for the active environment (from merged config)
   const configVariables = useMemo<Record<string, string>>(() => {
     if (!config || !activeEnvironment) return {};
     const envConfig = config.environments[activeEnvironment];
@@ -110,18 +107,31 @@ export function useVariables() {
     return vars;
   }, [config, activeEnvironment]);
 
+  // Saved overrides for the active environment (from JSON file)
+  const savedOverrides = useMemo<Record<string, string>>(() => {
+    if (!overrides || !activeEnvironment) return {};
+    const envOverride = overrides.environments[activeEnvironment];
+    if (!envOverride) return {};
+    const vars: Record<string, string> = {};
+    if (envOverride.baseUrl) vars.base_url = envOverride.baseUrl;
+    Object.assign(vars, envOverride.variables);
+    return vars;
+  }, [overrides, activeEnvironment]);
+
   // Resolved variable table with source tracking
   const resolvedVariables = useMemo<ResolvedVariable[]>(() => {
     const result = new Map<string, ResolvedVariable>();
 
-    // Layer 1: app-config (lowest priority)
+    // Layer 1: app-config (lowest priority — all merged values start as config)
     for (const [key, value] of Object.entries(configVariables)) {
       result.set(key, { key, value, source: 'app-config' });
     }
 
-    // Layer 2: localStorage overrides
-    for (const [key, value] of Object.entries(localOverrides)) {
-      result.set(key, { key, value, source: 'localStorage' });
+    // Layer 2: mark variables that come from saved overrides
+    for (const key of Object.keys(savedOverrides)) {
+      if (result.has(key)) {
+        result.set(key, { key, value: result.get(key)!.value, source: 'saved' });
+      }
     }
 
     // Layer 3: runtime overrides (highest priority)
@@ -132,35 +142,64 @@ export function useVariables() {
     return Array.from(result.values()).sort((a, b) =>
       a.key.localeCompare(b.key),
     );
-  }, [configVariables, localOverrides, runtimeOverrides]);
+  }, [configVariables, savedOverrides, runtimeOverrides]);
 
   // Merged variables map (for passing to execution)
   const mergedVariables = useMemo<Record<string, string>>(() => {
     const merged: Record<string, string> = {};
-    // app-config < localStorage < runtime
     Object.assign(merged, configVariables);
-    Object.assign(merged, localOverrides);
     Object.assign(merged, runtimeOverrides);
     return merged;
-  }, [configVariables, localOverrides, runtimeOverrides]);
+  }, [configVariables, runtimeOverrides]);
 
-  // localStorage CRUD
-  const setLocalOverride = useCallback((key: string, value: string) => {
-    setLocalOverrides(prev => {
-      const next = { ...prev, [key]: value };
-      writeLocalStorageVars(next);
-      return next;
-    });
-  }, []);
+  // Server-side override CRUD (replaces localStorage)
+  const setSavedOverride = useCallback(
+    async (key: string, value: string) => {
+      if (!activeEnvironment) return;
+      // Optimistic update
+      setOverrides(prev => {
+        if (!prev) return prev;
+        const envOvr = prev.environments[activeEnvironment] ?? {
+          baseUrl: '',
+          variables: {},
+        };
+        return {
+          ...prev,
+          environments: {
+            ...prev.environments,
+            [activeEnvironment]: {
+              ...envOvr,
+              variables: { ...envOvr.variables, [key]: value },
+            },
+          },
+        };
+      });
+      // Persist to server
+      const current = overrides?.environments[activeEnvironment];
+      await client.putEnvironment(activeEnvironment, {
+        baseUrl: current?.baseUrl ?? config?.environments[activeEnvironment]?.baseUrl ?? '',
+        variables: { ...(current?.variables ?? {}), [key]: value },
+      });
+      await fetchAll();
+    },
+    [activeEnvironment, overrides, config, client, fetchAll],
+  );
 
-  const removeLocalOverride = useCallback((key: string) => {
-    setLocalOverrides(prev => {
-      const next = { ...prev };
-      delete next[key];
-      writeLocalStorageVars(next);
-      return next;
-    });
-  }, []);
+  const removeSavedOverride = useCallback(
+    async (key: string) => {
+      if (!activeEnvironment) return;
+      const current = overrides?.environments[activeEnvironment];
+      if (!current) return;
+      const newVars = { ...current.variables };
+      delete newVars[key];
+      await client.putEnvironment(activeEnvironment, {
+        baseUrl: current.baseUrl,
+        variables: newVars,
+      });
+      await fetchAll();
+    },
+    [activeEnvironment, overrides, client, fetchAll],
+  );
 
   // Runtime override management
   const setRuntimeOverride = useCallback((key: string, value: string) => {
@@ -183,29 +222,36 @@ export function useVariables() {
   const getVariableSource = useCallback(
     (key: string): VariableSource | undefined => {
       if (key in runtimeOverrides) return 'runtime';
-      if (key in localOverrides) return 'localStorage';
+      if (key in savedOverrides) return 'saved';
       if (key in configVariables) return 'app-config';
       return undefined;
     },
-    [runtimeOverrides, localOverrides, configVariables],
+    [runtimeOverrides, savedOverrides, configVariables],
   );
+
+  // Refresh callback for external components (e.g. EnvironmentSettingsPanel)
+  const refreshConfig = useCallback(async () => {
+    await fetchAll();
+  }, [fetchAll]);
 
   return {
     loading,
     config,
+    overrides,
     environments,
     activeEnvironment,
     setSelectedEnvironment,
     configVariables,
-    localOverrides,
+    savedOverrides,
     runtimeOverrides,
     resolvedVariables,
     mergedVariables,
-    setLocalOverride,
-    removeLocalOverride,
+    setSavedOverride,
+    removeSavedOverride,
     setRuntimeOverride,
     removeRuntimeOverride,
     clearRuntimeOverrides,
     getVariableSource,
+    refreshConfig,
   };
 }

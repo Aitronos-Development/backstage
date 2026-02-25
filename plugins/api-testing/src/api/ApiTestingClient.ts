@@ -19,6 +19,8 @@ import type {
   ExecutionResult,
   ExecutionRecord,
   ApiTestingConfig,
+  EnvironmentOverride,
+  EnvironmentOverrides,
 } from './types';
 
 export class ApiTestingClient {
@@ -39,11 +41,29 @@ export class ApiTestingClient {
     return routeGroup.replace(/^\//, '').replace(/\//g, '-');
   }
 
+  /** Read error detail from a non-ok response body, falling back to statusText */
+  private async extractResponseError(
+    response: Response,
+    fallbackPrefix: string,
+  ): Promise<string> {
+    try {
+      const body = await response.json();
+      const msg =
+        body?.error?.message || body?.message || body?.error || undefined;
+      if (typeof msg === 'string') return `${fallbackPrefix}: ${msg}`;
+    } catch {
+      // body not JSON — ignore
+    }
+    return `${fallbackPrefix}: ${response.statusText}`;
+  }
+
   async getRouteGroups(): Promise<string[]> {
     const base = await this.baseUrl();
     const response = await this.fetchApi.fetch(`${base}/route-groups`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch route groups: ${response.statusText}`);
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to fetch route groups'),
+      );
     }
     return response.json();
   }
@@ -52,7 +72,9 @@ export class ApiTestingClient {
     const base = await this.baseUrl();
     const response = await this.fetchApi.fetch(`${base}/config`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch config: ${response.statusText}`);
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to fetch config'),
+      );
     }
     return response.json();
   }
@@ -68,7 +90,9 @@ export class ApiTestingClient {
       body: JSON.stringify({ testCaseId, routeGroup }),
     });
     if (!response.ok) {
-      throw new Error(`Failed to extract variables: ${response.statusText}`);
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to extract variables'),
+      );
     }
     const data = await response.json();
     return data.variables;
@@ -79,7 +103,9 @@ export class ApiTestingClient {
     const encoded = this.encodeRouteGroup(routeGroup);
     const response = await this.fetchApi.fetch(`${base}/test-cases/${encoded}`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch test cases: ${response.statusText}`);
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to fetch test cases'),
+      );
     }
     return response.json();
   }
@@ -97,7 +123,9 @@ export class ApiTestingClient {
       body: JSON.stringify({ testCaseId, routeGroup, variables, environment }),
     });
     if (!response.ok) {
-      throw new Error(`Failed to execute test case: ${response.statusText}`);
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to execute test case'),
+      );
     }
     return response.json();
   }
@@ -116,7 +144,9 @@ export class ApiTestingClient {
       body: JSON.stringify({ routeGroup, variables, environment }),
     });
     if (!response.ok) {
-      throw new Error(`Failed to execute all tests: ${response.statusText}`);
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to execute all tests'),
+      );
     }
     return response.json();
   }
@@ -129,7 +159,9 @@ export class ApiTestingClient {
       body: JSON.stringify({ executionId }),
     });
     if (!response.ok) {
-      throw new Error(`Failed to stop execution: ${response.statusText}`);
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to stop execution'),
+      );
     }
     return response.json();
   }
@@ -157,7 +189,7 @@ export class ApiTestingClient {
     const response = await this.fetchApi.fetch(url);
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch endpoint history: ${response.statusText}`,
+        await this.extractResponseError(response, 'Failed to fetch endpoint history'),
       );
     }
     return response.json();
@@ -185,10 +217,71 @@ export class ApiTestingClient {
     const response = await this.fetchApi.fetch(url);
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch route group history: ${response.statusText}`,
+        await this.extractResponseError(response, 'Failed to fetch route group history'),
       );
     }
     return response.json();
+  }
+
+  async getConfigOverrides(): Promise<EnvironmentOverrides> {
+    const base = await this.baseUrl();
+    const response = await this.fetchApi.fetch(`${base}/config/overrides`);
+    if (!response.ok) {
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to fetch config overrides'),
+      );
+    }
+    return response.json();
+  }
+
+  async putEnvironment(
+    envName: string,
+    override: EnvironmentOverride,
+  ): Promise<void> {
+    const base = await this.baseUrl();
+    const response = await this.fetchApi.fetch(
+      `${base}/config/environments/${encodeURIComponent(envName)}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(override),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to save environment'),
+      );
+    }
+  }
+
+  async deleteEnvironment(envName: string): Promise<void> {
+    const base = await this.baseUrl();
+    const response = await this.fetchApi.fetch(
+      `${base}/config/environments/${encodeURIComponent(envName)}`,
+      { method: 'DELETE' },
+    );
+    if (!response.ok) {
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to delete environment'),
+      );
+    }
+  }
+
+  async setDefaultEnvironment(envName: string): Promise<void> {
+    const base = await this.baseUrl();
+    const response = await this.fetchApi.fetch(
+      `${base}/config/default-environment`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ environment: envName }),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to set default environment'),
+      );
+    }
   }
 
   getWebSocketUrl(): string {

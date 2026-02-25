@@ -40,9 +40,11 @@ import {
   useTestExecution,
   useWebSocket,
   useVariables,
+  useApiTestingClient,
   TestCaseRow,
   EnvironmentSwitcher,
   VariableConfigPanel,
+  EnvironmentSettingsPanel,
   ExecutionHistoryContext,
 } from '@internal/plugin-api-testing';
 import type {
@@ -910,6 +912,7 @@ export function ApiRouteDefinitionContent() {
   const config = useApi(configApiRef);
   const backendUrl = config.getString('backend.baseUrl');
   const variables = useVariables();
+  const apiClient = useApiTestingClient();
 
   // Fetch the OpenAPI spec: from entity definition (API entities) or
   // from the live Freddy backend via proxy (Component entities).
@@ -947,6 +950,7 @@ export function ApiRouteDefinitionContent() {
   const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
 
   const [variablesOpen, setVariablesOpen] = useState(false);
+  const [envSettingsOpen, setEnvSettingsOpen] = useState(false);
 
   // Per-test runtime overrides: { [testCaseId]: { [varKey]: value } }
   const [runtimeOverrides, setRuntimeOverrides] = useState<
@@ -1107,6 +1111,7 @@ export function ApiRouteDefinitionContent() {
               environments={variables.environments}
               activeEnvironment={variables.activeEnvironment}
               onEnvironmentChange={variables.setSelectedEnvironment}
+              onSettingsOpen={() => setEnvSettingsOpen(true)}
             />
             <Button
               variant="outlined"
@@ -1123,8 +1128,17 @@ export function ApiRouteDefinitionContent() {
           onClose={() => setVariablesOpen(false)}
           resolvedVariables={variables.resolvedVariables}
           activeEnvironment={variables.activeEnvironment}
-          onSetLocalOverride={variables.setLocalOverride}
-          onRemoveLocalOverride={variables.removeLocalOverride}
+          onSetOverride={variables.setSavedOverride}
+          onRemoveOverride={variables.removeSavedOverride}
+        />
+        <EnvironmentSettingsPanel
+          open={envSettingsOpen}
+          onClose={() => setEnvSettingsOpen(false)}
+          config={variables.config}
+          overrides={variables.overrides}
+          activeEnvironment={variables.activeEnvironment}
+          client={apiClient}
+          onSave={variables.refreshConfig}
         />
         {routeGroups.map(group => (
           <RouteGroupAccordion

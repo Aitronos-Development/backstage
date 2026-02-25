@@ -550,8 +550,8 @@ export function FlowTestContent() {
           onClose={() => setVariablesOpen(false)}
           resolvedVariables={variables.resolvedVariables}
           activeEnvironment={variables.activeEnvironment}
-          onSetLocalOverride={variables.setLocalOverride}
-          onRemoveLocalOverride={variables.removeLocalOverride}
+          onSetOverride={variables.setSavedOverride}
+          onRemoveOverride={variables.removeSavedOverride}
         />
         {routeGroups.map(group => (
           <FlowRouteGroupAccordion

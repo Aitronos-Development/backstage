@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: internal-plugin-bug-manager-backend
+  title: '@internal/plugin-bug-manager-backend'
+spec:
+  lifecycle: experimental
+  type: backstage-backend-plugin
+  owner: maintainers

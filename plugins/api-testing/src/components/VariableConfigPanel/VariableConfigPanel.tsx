@@ -255,8 +255,8 @@ interface VariableConfigPanelProps {
   onClose: () => void;
   resolvedVariables: ResolvedVariable[];
   activeEnvironment: string;
-  onSetLocalOverride: (key: string, value: string) => void;
-  onRemoveLocalOverride: (key: string) => void;
+  onSetOverride: (key: string, value: string) => void;
+  onRemoveOverride: (key: string) => void;
 }
 
 export function VariableConfigPanel({
@@ -264,8 +264,8 @@ export function VariableConfigPanel({
   onClose,
   resolvedVariables,
   activeEnvironment,
-  onSetLocalOverride,
-  onRemoveLocalOverride,
+  onSetOverride,
+  onRemoveOverride,
 }: VariableConfigPanelProps) {
   const classes = useStyles();
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -275,13 +275,13 @@ export function VariableConfigPanel({
 
   const sourceChipClass = (source: string) => {
     if (source === 'app-config') return classes.sourceConfig;
-    if (source === 'localStorage') return classes.sourceLocal;
+    if (source === 'saved') return classes.sourceLocal;
     return classes.sourceRuntime;
   };
 
   const sourceLabel = (source: string) => {
     if (source === 'app-config') return 'config';
-    if (source === 'localStorage') return 'local';
+    if (source === 'saved') return 'saved';
     return 'runtime';
   };
 
@@ -292,7 +292,7 @@ export function VariableConfigPanel({
 
   const saveEdit = () => {
     if (editingKey) {
-      onSetLocalOverride(editingKey, editValue);
+      onSetOverride(editingKey, editValue);
       setEditingKey(null);
       setEditValue('');
     }
@@ -306,7 +306,7 @@ export function VariableConfigPanel({
   const handleAdd = () => {
     const trimmed = newKey.trim();
     if (trimmed) {
-      onSetLocalOverride(trimmed, newValue);
+      onSetOverride(trimmed, newValue);
       setNewKey('');
       setNewValue('');
     }
@@ -412,11 +412,11 @@ export function VariableConfigPanel({
                       </IconButton>
                     </Tooltip>
                   )}
-                  {v.source === 'localStorage' && (
+                  {v.source === 'saved' && (
                     <Tooltip title="Remove">
                       <IconButton
                         size="small"
-                        onClick={() => onRemoveLocalOverride(v.key)}
+                        onClick={() => onRemoveOverride(v.key)}
                       >
                         <DeleteIcon style={{ fontSize: '0.95rem' }} />
                       </IconButton>

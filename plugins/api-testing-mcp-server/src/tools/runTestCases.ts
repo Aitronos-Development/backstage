@@ -255,7 +255,7 @@ export function registerRunTestCases(server: McpServer) {
     },
     async ({ route_group, test_case_ids, variable_overrides }, extra) => {
       // Merge app-config variables with agent-provided overrides
-      const variables = buildMcpVariables(variable_overrides);
+      const variables = await buildMcpVariables(variable_overrides);
 
       // Determine which test cases to run
       let testCases: TestCase[];

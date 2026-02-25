@@ -261,6 +261,9 @@ export function TestCaseRow({
 
   const errorSummary = useErrorAnalysis({
     method: testCase.method,
+    path: testCase.path,
+    body: testCase.body,
+    flowMetadata: testCase.flow_metadata,
     status,
     result,
     error,

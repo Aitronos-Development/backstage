@@ -38,9 +38,11 @@ import {
   useTestExecution,
   useWebSocket,
   useVariables,
+  useApiTestingClient,
   TestCaseRow,
   EnvironmentSwitcher,
   VariableConfigPanel,
+  EnvironmentSettingsPanel,
   ExecutionHistoryContext,
 } from '@internal/plugin-api-testing';
 import type { ExecutionRecord } from '@internal/plugin-api-testing';
@@ -295,9 +297,11 @@ export function ApiTestingPage() {
   const classes = useStyles();
   const { routeGroups, loading, error } = useRouteGroups();
   const variables = useVariables();
+  const client = useApiTestingClient();
 
   const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
   const [variablesOpen, setVariablesOpen] = useState(false);
+  const [envSettingsOpen, setEnvSettingsOpen] = useState(false);
   const [runtimeOverrides, setRuntimeOverrides] = useState<
     Record<string, Record<string, string>>
   >({});
@@ -446,6 +450,7 @@ export function ApiTestingPage() {
                   environments={variables.environments}
                   activeEnvironment={variables.activeEnvironment}
                   onEnvironmentChange={variables.setSelectedEnvironment}
+                  onSettingsOpen={() => setEnvSettingsOpen(true)}
                 />
                 <Button
                   variant="outlined"
@@ -462,8 +467,17 @@ export function ApiTestingPage() {
               onClose={() => setVariablesOpen(false)}
               resolvedVariables={variables.resolvedVariables}
               activeEnvironment={variables.activeEnvironment}
-              onSetLocalOverride={variables.setLocalOverride}
-              onRemoveLocalOverride={variables.removeLocalOverride}
+              onSetOverride={variables.setSavedOverride}
+              onRemoveOverride={variables.removeSavedOverride}
+            />
+            <EnvironmentSettingsPanel
+              open={envSettingsOpen}
+              onClose={() => setEnvSettingsOpen(false)}
+              config={variables.config}
+              overrides={variables.overrides}
+              activeEnvironment={variables.activeEnvironment}
+              client={client}
+              onSave={variables.refreshConfig}
             />
             {routeGroups.length === 0 ? (
               <Typography className={classes.emptyState}>

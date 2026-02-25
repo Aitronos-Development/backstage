@@ -319,13 +319,26 @@ permission:
   enabled: true
 
 apiTesting:
+  testRepository:
+    url: https://github.com/Aitronos-Development/Freddy.Backend.Tests.git
+    branch: main
   defaultEnvironment: develop
   environments:
     develop:
       baseUrl: http://localhost:8000
-      variables:
-        auth_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NzE1ODIyNDUsImp0aSI6ImIwMjYxOTY4LTc1NGEtNGRmZi1iNjU1LWU3M2JhYWMxOWIxOSIsInR5cGUiOiJhY2Nlc3MiLCJzdWIiOiJ1c3JfYzc4Yzg2MWFmNWZiNGIyYWFmZWY2MzIxNDE1MmE2NTkiLCJuYmYiOjE3NzE1ODIyNDUsImV4cCI6MTc3MTY2ODY0NSwiZW52IjoibG9jYWwiLCJjdHgiOiJnQUFBQUFCcG1ETWxjaEhfWGpBRWdkTEpBUUVTTlBwU21Lcy1LRG84eXExSFpZbi12TUNudTFnckQ1RlJxcE5YZkc3QXBrdjRXV2ZPTWZBVW8wMEhSVW01Y3RGZGdhdUdKejdScDhsVi1sUkZva01TMUItRGl4ZmFFT2d1V0RkdExyZ3lsaVRmNUhqNiJ9.EVHmhB4MXtn-m3nMLwLTsiwMDolroLHJS-dRnz7qYuc
-        org_id: dev-org-001
+      setup:
+        - name: authenticate
+          method: POST
+          path: /v1/auth/dev-login
+          body:
+            email_or_username: developers@aitronos.com
+            password: 'securePassword123!'
+          capture:
+            auth_token: access_token
+            refresh_token: refresh_token
+            user_id: user.id
+            org_id: user.current_organization_id
+      variables: {}
     staging:
       baseUrl: https://staging-api.example.com
       variables:
