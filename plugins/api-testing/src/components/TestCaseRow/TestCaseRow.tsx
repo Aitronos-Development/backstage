@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   makeStyles,
   TableRow,
@@ -34,6 +34,7 @@ import TuneIcon from '@material-ui/icons/Tune';
 import { TestResultBadge } from '../TestResultBadge/TestResultBadge';
 import { EndpointHistory } from '../EndpointHistory/EndpointHistory';
 import { FlowStepsPipeline } from '../FlowStepsPipeline/FlowStepsPipeline';
+import { FlowStepDetailPanel } from '../FlowStepsPipeline/FlowStepDetailPanel';
 import { useErrorAnalysis } from '../../hooks/useErrorAnalysis';
 import type { TestCase, ExecutionResult, TestStatus } from '../../api/types';
 
@@ -258,6 +259,7 @@ export function TestCaseRow({
   const [expanded, setExpanded] = useState(false);
   const [showVars, setShowVars] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [selectedFlowStep, setSelectedFlowStep] = useState<number | null>(null);
 
   const errorSummary = useErrorAnalysis({
     method: testCase.method,
@@ -276,12 +278,33 @@ export function TestCaseRow({
     isFlow && (testCase.flow_metadata?.steps?.length ?? 0) > 0;
   const showDetails = isFlow || (status === 'fail' && (result || error));
 
-  // Auto-expand flow tests when they start running so user sees step animation
+  // Auto-expand flow tests when they start running so user sees step animation,
+  // and auto-show logs when execution completes so a human can review output
+  const prevStatusRef = useRef<TestStatus>(status);
   useEffect(() => {
     if (hasFlowSteps && status === 'running') {
       setExpanded(true);
     }
-  }, [hasFlowSteps, status]);
+    // When a flow test finishes (running → pass/fail), auto-show the log
+    if (
+      isFlow &&
+      prevStatusRef.current === 'running' &&
+      (status === 'pass' || status === 'fail')
+    ) {
+      setExpanded(true);
+      setShowLog(true);
+      // Auto-select the failed step, or first step on pass
+      if (status === 'fail' && result?.details.flowStepLog) {
+        const failedIdx = result.details.flowStepLog.steps.findIndex(
+          s => s.status === 'fail',
+        );
+        setSelectedFlowStep(failedIdx >= 0 ? failedIdx : null);
+      } else if (status === 'pass' && result?.details.flowStepLog) {
+        setSelectedFlowStep(0);
+      }
+    }
+    prevStatusRef.current = status;
+  }, [hasFlowSteps, isFlow, status, result]);
 
   const usedVariables = useMemo(
     () => extractUsedVariables(testCase),
@@ -428,7 +451,20 @@ export function TestCaseRow({
                       steps={testCase.flow_metadata.steps}
                       status={status}
                       result={result}
+                      onStepClick={idx =>
+                        setSelectedFlowStep(idx === -1 ? null : idx)
+                      }
+                      selectedStep={selectedFlowStep}
                     />
+                    {selectedFlowStep !== null &&
+                      result?.details.flowStepLog?.steps[selectedFlowStep] && (
+                        <FlowStepDetailPanel
+                          step={
+                            result.details.flowStepLog.steps[selectedFlowStep]
+                          }
+                          stepIndex={selectedFlowStep}
+                        />
+                      )}
                   </Box>
                 )}
                 {/* Error summary banner */}

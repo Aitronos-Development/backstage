@@ -46,6 +46,18 @@ const useStyles = makeStyles(theme => ({
     transition: 'all 300ms ease',
     cursor: 'default',
   },
+  stepClickable: {
+    cursor: 'pointer',
+    '&:hover': {
+      transform: 'scale(1.04)',
+    },
+  },
+  stepSelected: {
+    boxShadow:
+      theme.palette.type === 'dark'
+        ? '0 0 0 2px rgba(255,255,255,0.3)'
+        : '0 0 0 2px rgba(0,0,0,0.2)',
+  },
   stepPending: {
     borderColor: theme.palette.grey[400],
     backgroundColor: 'transparent',
@@ -121,6 +133,12 @@ const useStyles = makeStyles(theme => ({
     fontFamily: MONO_FONT,
     fontSize: '0.75rem',
     fontWeight: 500,
+    whiteSpace: 'nowrap',
+  },
+  stepDuration: {
+    fontFamily: MONO_FONT,
+    fontSize: '0.65rem',
+    opacity: 0.7,
     whiteSpace: 'nowrap',
   },
   connector: {
@@ -230,11 +248,27 @@ function getStepStatuses(
     });
   }
 
+  // Use structured step log when available (authoritative source)
+  if (
+    (testStatus === 'pass' || testStatus === 'fail') &&
+    result?.details.flowStepLog
+  ) {
+    const logSteps = result.details.flowStepLog.steps;
+    return steps.map(stepName => {
+      const logEntry = logSteps.find(s => s.name === stepName);
+      if (!logEntry) {
+        const hasFailed = logSteps.some(s => s.status === 'fail');
+        return hasFailed ? 'skipped' : 'pending';
+      }
+      return logEntry.status === 'pass' ? 'pass' : 'fail';
+    });
+  }
+
   if (testStatus === 'pass') {
     return steps.map(() => 'pass');
   }
 
-  // testStatus === 'fail'
+  // testStatus === 'fail' — fallback to text inference
   const failedIdx = inferFailedStepIndex(steps, result);
   return steps.map((_, i) => {
     if (i < failedIdx) return 'pass';
@@ -247,14 +281,19 @@ interface FlowStepsPipelineProps {
   steps: string[];
   status: TestStatus;
   result?: ExecutionResult;
+  onStepClick?: (stepIndex: number) => void;
+  selectedStep?: number | null;
 }
 
 export function FlowStepsPipeline({
   steps,
   status,
   result,
+  onStepClick,
+  selectedStep,
 }: FlowStepsPipelineProps) {
   const classes = useStyles();
+  const hasStepLog = !!result?.details.flowStepLog;
 
   // Animate through steps when running
   const [activeRunningStep, setActiveRunningStep] = useState(0);
@@ -318,7 +357,7 @@ export function FlowStepsPipeline({
     );
   };
 
-  const tooltipText = (step: string, s: StepStatus) => {
+  const tooltipText = (step: string, s: StepStatus, index: number) => {
     const labels: Record<StepStatus, string> = {
       pending: 'Pending',
       running: 'Running...',
@@ -326,21 +365,59 @@ export function FlowStepsPipeline({
       fail: 'Failed',
       skipped: 'Skipped',
     };
-    return `${step}: ${labels[s]}`;
+    const stepLog = result?.details.flowStepLog?.steps.find(
+      ls => ls.name === step,
+    );
+    const parts = [`${step}: ${labels[s]}`];
+    if (stepLog) {
+      parts.push(`${stepLog.duration_ms}ms`);
+      if (stepLog.http_calls.length > 0) {
+        parts.push(
+          `${stepLog.http_calls.length} HTTP call${stepLog.http_calls.length > 1 ? 's' : ''}`,
+        );
+      }
+    }
+    if (hasStepLog) {
+      parts.push('Click for details');
+    }
+    return parts.join(' · ');
+  };
+
+  const handleStepClick = (index: number) => {
+    if (hasStepLog && onStepClick) {
+      onStepClick(selectedStep === index ? -1 : index);
+    }
   };
 
   return (
     <Box className={classes.pipeline}>
       {steps.map((step, i) => {
         const s = stepStatuses[i];
+        const isSelected = selectedStep === i;
+        const isClickable = hasStepLog && !!onStepClick;
+        const stepLog = result?.details.flowStepLog?.steps.find(
+          ls => ls.name === step,
+        );
         return (
           <Box key={step} style={{ display: 'flex', alignItems: 'center' }}>
-            <Tooltip title={tooltipText(step, s)} arrow placement="top">
-              <Box className={`${classes.stepNode} ${stepNodeClass(s)}`}>
+            <Tooltip
+              title={tooltipText(step, s, i)}
+              arrow
+              placement="top"
+            >
+              <Box
+                className={`${classes.stepNode} ${stepNodeClass(s)}${isClickable ? ` ${classes.stepClickable}` : ''}${isSelected ? ` ${classes.stepSelected}` : ''}`}
+                onClick={() => handleStepClick(i)}
+              >
                 <Box className={`${classes.stepNumber} ${stepNumberClass(s)}`}>
                   {stepContent(s, i)}
                 </Box>
                 <Typography className={classes.stepLabel}>{step}</Typography>
+                {stepLog && (s === 'pass' || s === 'fail') && (
+                  <Typography className={classes.stepDuration}>
+                    {stepLog.duration_ms}ms
+                  </Typography>
+                )}
               </Box>
             </Tooltip>
             {i < steps.length - 1 && (

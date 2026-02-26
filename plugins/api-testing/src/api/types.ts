@@ -38,6 +38,27 @@ export interface TestCase {
   updated_at: string;
 }
 
+export interface FlowHttpCall {
+  method: string;
+  url: string;
+  status_code: number;
+  duration_ms: number;
+  request_body_excerpt: string | null;
+  response_body_excerpt: string | null;
+}
+
+export interface FlowStepDetail {
+  name: string;
+  status: 'pass' | 'fail';
+  duration_ms: number;
+  error?: string;
+  http_calls: FlowHttpCall[];
+}
+
+export interface FlowStepLog {
+  steps: FlowStepDetail[];
+}
+
 export interface ExecutionResult {
   executionId: string;
   pass: boolean;
@@ -52,6 +73,7 @@ export interface ExecutionResult {
     >;
     missingFields?: string[];
     responseBody?: unknown;
+    flowStepLog?: FlowStepLog;
   };
 }
 
@@ -112,4 +134,5 @@ export interface ExecutionRecord {
     body?: unknown;
   };
   failure_reason: string | null;
+  flow_step_log?: FlowStepLog;
 }

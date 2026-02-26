@@ -69,12 +69,11 @@ export class BugManagerStore {
     // MAX() on a string column breaks at BUG-1000 (lexicographic 'BUG-999' > 'BUG-1000').
     // Order by length first so longer numbers always win.
     const row = await this.db('bugs')
+      .select('ticket_number')
       .orderByRaw('LENGTH(ticket_number) DESC, ticket_number DESC')
-      .limit(1)
-      .pluck('ticket_number')
       .first();
     if (!row) return 'BUG-001';
-    const num = parseInt((row as string).replace('BUG-', ''), 10);
+    const num = parseInt(row.ticket_number.replace('BUG-', ''), 10);
     return `BUG-${String(num + 1).padStart(3, '0')}`;
   }
 

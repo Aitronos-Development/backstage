@@ -13,6 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export interface FlowHttpCall {
+  method: string;
+  url: string;
+  status_code: number;
+  duration_ms: number;
+  request_body_excerpt: string | null;
+  response_body_excerpt: string | null;
+}
+
+export interface FlowStepDetail {
+  name: string;
+  status: 'pass' | 'fail';
+  duration_ms: number;
+  error?: string;
+  http_calls: FlowHttpCall[];
+}
+
+export interface FlowStepLog {
+  steps: FlowStepDetail[];
+}
+
 export interface ExecutionRecord {
   id: string;
   timestamp: string;
@@ -35,4 +56,5 @@ export interface ExecutionRecord {
     body?: unknown;
   };
   failure_reason: string | null;
+  flow_step_log?: FlowStepLog;
 }

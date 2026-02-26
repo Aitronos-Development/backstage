@@ -215,24 +215,26 @@ export async function createRouter(options: RouterOptions): Promise<Router> {
 
   // ── Users ─────────────────────────────────────────────────────────────────
 
-  router.get('/users', async (_req, res) => {
-    const refs = await store.getDistinctAssignees();
+  router.get('/users', async (req, res) => {
+    const credentials = await httpAuth.credentials(req).catch(() => undefined);
+    const opts = credentials ? { credentials } : undefined;
 
-    const users = await Promise.all(
-      refs.map(async ref => {
-        try {
-          const entity = await catalogClient.getEntityByRef(ref);
-          const profile = (entity?.spec?.profile as any) ?? {};
-          return {
-            id:          ref,
-            displayName: profile.displayName ?? ref,
-            avatarUrl:   profile.picture ?? undefined,
-          };
-        } catch {
-          return { id: ref, displayName: ref, avatarUrl: undefined };
-        }
-      }),
+    // Fetch all User entities from the Backstage catalog so every known user
+    // can be assigned to a bug — not just users already referenced in the DB.
+    const { items } = await catalogClient.getEntities(
+      { filter: { kind: 'User' } },
+      opts as any,
     );
+
+    const users = items.map(entity => {
+      const profile = (entity.spec?.profile as any) ?? {};
+      const ref = `user:${entity.metadata.namespace ?? 'default'}/${entity.metadata.name}`;
+      return {
+        id:          ref,
+        displayName: profile.displayName ?? entity.metadata.name,
+        avatarUrl:   profile.picture ?? undefined,
+      };
+    });
 
     res.json(users);
   });

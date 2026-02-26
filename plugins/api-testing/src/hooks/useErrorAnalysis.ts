@@ -64,8 +64,35 @@ export function useErrorAnalysis({
 
     if (!result) return null;
 
-    // Path B: FLOW test — extract key failure from pytest output
+    // Path B: FLOW test — use structured step log when available
     if (isFlow) {
+      if (result.details.flowStepLog) {
+        const failedStep = result.details.flowStepLog.steps.find(
+          s => s.status === 'fail',
+        );
+        if (failedStep) {
+          const parts: string[] = [
+            `Step "${failedStep.name}" failed after ${failedStep.duration_ms}ms`,
+          ];
+          if (failedStep.http_calls.length > 0) {
+            parts.push(
+              failedStep.http_calls
+                .map(c => `  ${c.method} ${c.url} -> ${c.status_code}`)
+                .join('\n'),
+            );
+          }
+          if (failedStep.error) {
+            const errorLines = failedStep.error.split('\n').slice(0, 3);
+            parts.push(errorLines.join('\n'));
+          }
+          return formatFlowRequest(
+            parts.join('\n'),
+            path,
+            flowMetadata,
+            result,
+          );
+        }
+      }
       return formatFlowRequest(extractFlowSummary(result), path, flowMetadata, result);
     }
 

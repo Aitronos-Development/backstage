@@ -24,6 +24,7 @@ import {
   buildExecutionRecord,
 } from '../storage';
 import type { TestCase } from '../storage';
+import type { FlowStepLog } from '../storage/historyTypes';
 import { resolveVariables, buildMcpVariables } from '../variableResolution';
 
 interface InternalExecutionResult {
@@ -31,6 +32,7 @@ interface InternalExecutionResult {
   statusCode: number;
   responseTime: number;
   failureReason: string | null;
+  flowStepLog?: FlowStepLog;
   request: {
     method: string;
     url: string;
@@ -50,6 +52,55 @@ const FLOW_TESTS_DIR = path.resolve(
   '../../../../test-repositories/Freddy.Backend.Tests',
 );
 
+const FLOW_LOG_BEGIN = '---FLOW_STEP_LOG_BEGIN---';
+const FLOW_LOG_END = '---FLOW_STEP_LOG_END---';
+
+function extractFlowStepLog(output: string): FlowStepLog | null {
+  const beginIdx = output.indexOf(FLOW_LOG_BEGIN);
+  const endIdx = output.indexOf(FLOW_LOG_END);
+  if (beginIdx === -1 || endIdx === -1 || endIdx <= beginIdx) {
+    return null;
+  }
+  const jsonStr = output
+    .slice(beginIdx + FLOW_LOG_BEGIN.length, endIdx)
+    .trim();
+  try {
+    return JSON.parse(jsonStr) as FlowStepLog;
+  } catch {
+    return null;
+  }
+}
+
+function stripFlowStepLog(output: string): string {
+  const beginIdx = output.indexOf(FLOW_LOG_BEGIN);
+  const endIdx = output.indexOf(FLOW_LOG_END);
+  if (beginIdx === -1 || endIdx === -1) return output;
+  return (
+    output.slice(0, beginIdx) + output.slice(endIdx + FLOW_LOG_END.length)
+  ).trim();
+}
+
+/** Deep-equal comparison that handles key ordering differences in objects. */
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+  if (a === undefined || b === undefined) return false;
+  if (typeof a !== typeof b) return false;
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    return a.every((item, i) => deepEqual(item, b[i]));
+  }
+  if (typeof a === 'object' && typeof b === 'object') {
+    const aObj = a as Record<string, unknown>;
+    const bObj = b as Record<string, unknown>;
+    const aKeys = Object.keys(aObj);
+    const bKeys = Object.keys(bObj);
+    if (aKeys.length !== bKeys.length) return false;
+    return aKeys.every(key => key in bObj && deepEqual(aObj[key], bObj[key]));
+  }
+  return false;
+}
+
 async function executeFlowTest(
   testCase: TestCase,
 ): Promise<InternalExecutionResult> {
@@ -59,7 +110,7 @@ async function executeFlowTest(
     const start = Date.now();
     const proc = spawn(
       'uv',
-      ['run', 'pytest', pytestNodeId, '-v', '--tb=short', '--no-header'],
+      ['run', 'pytest', pytestNodeId, '-v', '--tb=short', '--no-header', '-s'],
       { cwd: FLOW_TESTS_DIR, env: { ...process.env } },
     );
 
@@ -76,7 +127,11 @@ async function executeFlowTest(
     proc.on('close', code => {
       const responseTime = Date.now() - start;
       const pass = code === 0;
-      const output = `${stdout}\n${stderr}`.trim();
+      const rawOutput = `${stdout}\n${stderr}`.trim();
+
+      // Extract structured step log and strip it from display output
+      const flowStepLog = extractFlowStepLog(rawOutput);
+      const output = flowStepLog ? stripFlowStepLog(rawOutput) : rawOutput;
 
       const failureLines = output
         .split('\n')
@@ -97,6 +152,7 @@ async function executeFlowTest(
             ? failureLines.join('; ')
             : output.slice(-500);
         })(),
+        flowStepLog: flowStepLog ?? undefined,
         request: { method: 'FLOW', url: pytestNodeId, headers: {} },
         response: {
           status_code: code ?? 1,
@@ -185,12 +241,14 @@ async function executeTestCase(
       testCase.assertions.body_contains,
     )) {
       const actual = (responseBody as Record<string, unknown>)[key];
-      if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      if (!deepEqual(actual, expected)) {
         pass = false;
+        const actualDisplay =
+          actual === undefined ? '<missing>' : JSON.stringify(actual);
         failureReasons.push(
           `Body field '${key}': expected ${JSON.stringify(
             expected,
-          )}, got ${JSON.stringify(actual)}`,
+          )}, got ${actualDisplay}`,
         );
       }
     }
@@ -325,6 +383,7 @@ export function registerRunTestCases(server: McpServer) {
             failureReason: execResult.failureReason,
             request: execResult.request,
             response: execResult.response,
+            flowStepLog: execResult.flowStepLog,
           });
           await historyStore.append(route_group, tc.id, record);
 

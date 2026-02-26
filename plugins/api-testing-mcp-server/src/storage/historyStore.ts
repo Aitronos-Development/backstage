@@ -16,7 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import type { ExecutionRecord } from './historyTypes';
+import type { ExecutionRecord, FlowStepLog } from './historyTypes';
 
 // eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
 const HISTORY_DIR = path.resolve(__dirname, '../../../../.api-testing-history');
@@ -78,6 +78,7 @@ export function buildExecutionRecord(opts: {
     headers: Record<string, string>;
     body?: unknown;
   };
+  flowStepLog?: FlowStepLog;
 }): ExecutionRecord {
   return {
     id: generateExecutionId(),
@@ -101,6 +102,7 @@ export function buildExecutionRecord(opts: {
       ...(opts.response.body !== undefined && { body: opts.response.body }),
     },
     failure_reason: opts.failureReason,
+    ...(opts.flowStepLog && { flow_step_log: opts.flowStepLog }),
   };
 }
 
