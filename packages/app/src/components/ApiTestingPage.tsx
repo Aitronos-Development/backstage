@@ -185,16 +185,12 @@ function RouteGroupAccordion({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       setRunningAll(true);
-      for (const tc of testCases) {
-        const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-        const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
-        await execution.execute(
-          tc.id,
-          routeGroup,
-          tcMerged,
-          variablesCtx.activeEnvironment,
-        );
-      }
+      await execution.executeAll(
+        testCases.map(tc => tc.id),
+        routeGroup,
+        variablesCtx.mergedVariables,
+        variablesCtx.activeEnvironment,
+      );
       setRunningAll(false);
     },
     [testCases, routeGroup, execution, variablesCtx],

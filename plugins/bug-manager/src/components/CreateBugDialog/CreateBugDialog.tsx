@@ -35,6 +35,7 @@ import { Priority } from '../../api/types';
 import { useBugManagerContext } from '../../context/useBugManagerContext';
 import { PRIORITY_COLORS } from '../../utils/priorities';
 import { UserAvatar } from '../shared/UserAvatar';
+import { MarkdownEditor } from '../shared/MarkdownEditor';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
@@ -155,14 +156,12 @@ export const CreateBugDialog = ({ open, onClose }: CreateBugDialogProps) => {
             inputProps={{ maxLength: 200 }}
           />
 
-          <TextField
+          <MarkdownEditor
             label="Description"
-            fullWidth
-            multiline
-            rows={4}
-            variant="outlined"
             value={description}
-            onChange={e => setDescription(e.target.value)}
+            onChange={setDescription}
+            minRows={4}
+            placeholder="Describe the bug using markdown..."
           />
 
           <Box className={classes.row}>

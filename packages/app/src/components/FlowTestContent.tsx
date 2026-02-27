@@ -268,16 +268,12 @@ function FlowRouteGroupAccordion({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       setRunningAll(true);
-      for (const tc of flowTests) {
-        const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-        const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
-        await execution.execute(
-          tc.id,
-          routeGroup,
-          tcMerged,
-          variablesCtx.activeEnvironment,
-        );
-      }
+      await execution.executeAll(
+        flowTests.map(tc => tc.id),
+        routeGroup,
+        variablesCtx.mergedVariables,
+        variablesCtx.activeEnvironment,
+      );
       setRunningAll(false);
     },
     [flowTests, routeGroup, execution, variablesCtx],

@@ -209,7 +209,7 @@ class InteractiveMenu {
     if (this.renderedLines > 0) {
       // Move cursor up and clear each line
       for (let i = 0; i < this.renderedLines; i++) {
-        process.stdout.write(c.cursorUp(1) + c.clearLine + '\r');
+        process.stdout.write(`${c.cursorUp(1) + c.clearLine  }\r`);
       }
       this.renderedLines = 0;
     }

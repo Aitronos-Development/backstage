@@ -41,6 +41,10 @@ import {
   extractVariablePlaceholders,
 } from './variableResolution';
 import type { TestCase } from './types';
+import {
+  fireBugDetectorHook,
+  type BugDetectorConfig,
+} from './bugDetectorHook';
 
 export interface RouterOptions {
   logger: LoggerService;
@@ -164,6 +168,19 @@ function readApiTestingConfig(config: RootConfigService): ApiTestingConfig {
   }
 
   return result;
+}
+
+function readBugDetectorConfig(
+  config: RootConfigService,
+): BugDetectorConfig {
+  const section = config
+    .getOptionalConfig('apiTesting')
+    ?.getOptionalConfig('bugDetector');
+
+  return {
+    enabled: section?.getOptionalBoolean('enabled') ?? true,
+    url: section?.getOptionalString('url') ?? 'http://127.0.0.1:7009',
+  };
 }
 
 /**
@@ -691,6 +708,8 @@ export async function createRouter(
       };
     }> = [];
 
+    const failedRunIds: string[] = [];
+
     for (const tc of testCases) {
       const controller = new AbortController();
       try {
@@ -713,6 +732,10 @@ export async function createRouter(
           flowStepLog: result.details.flowStepLog,
         });
         await historyStore.append(routeGroup, tc.id, record);
+
+        if (!result.pass) {
+          failedRunIds.push(record.id);
+        }
 
         broadcast({
           type: 'execution-completed',
@@ -743,6 +766,27 @@ export async function createRouter(
           },
         });
       }
+    }
+
+    // Fire bug detector hook asynchronously (does not block response)
+    if (failedRunIds.length > 0) {
+      const bugDetectorConfig = readBugDetectorConfig(config);
+      fireBugDetectorHook(bugDetectorConfig, routeGroup, failedRunIds, logger)
+        .then(bugResult => {
+          if (bugResult && bugResult.tickets_created.length > 0) {
+            broadcast({
+              type: 'bugs-created',
+              routeGroup,
+              tickets: bugResult.tickets_created.map(t => ({
+                ticket_number: t.ticket_number,
+                heading: t.heading,
+              })),
+            });
+          }
+        })
+        .catch(err => {
+          logger.warn('Bug detector post-completion hook failed', err);
+        });
     }
 
     res.json(results);

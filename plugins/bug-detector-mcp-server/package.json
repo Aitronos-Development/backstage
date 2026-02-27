@@ -1,0 +1,35 @@
+{
+  "name": "@backstage/plugin-bug-detector-mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "backstage": {
+    "role": "backend-plugin",
+    "pluginId": "bug-detector-mcp-server",
+    "pluginPackages": [
+      "@backstage/plugin-bug-detector-mcp-server"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/backstage/backstage",
+    "directory": "plugins/bug-detector-mcp-server"
+  },
+  "license": "Apache-2.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "backstage-cli package build",
+    "clean": "backstage-cli package clean",
+    "lint": "backstage-cli package lint",
+    "start": "backstage-cli package start",
+    "test": "backstage-cli package test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "tsx": "^4.21.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@backstage/cli": "workspace:^"
+  }
+}

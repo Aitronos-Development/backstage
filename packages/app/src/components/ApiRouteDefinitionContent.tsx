@@ -620,16 +620,12 @@ function RouteGroupAccordion({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       setRunningAll(true);
-      for (const tc of endpointTests) {
-        const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-        const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
-        await execution.execute(
-          tc.id,
-          group.prefix,
-          tcMerged,
-          variablesCtx.activeEnvironment,
-        );
-      }
+      await execution.executeAll(
+        endpointTests.map(tc => tc.id),
+        group.prefix,
+        variablesCtx.mergedVariables,
+        variablesCtx.activeEnvironment,
+      );
       setRunningAll(false);
     },
     [endpointTests, group.prefix, execution, variablesCtx],
@@ -797,16 +793,12 @@ function TestOnlyRouteGroupAccordion({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       setRunningAll(true);
-      for (const tc of endpointTests) {
-        const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-        const tcMerged = { ...variablesCtx.mergedVariables, ...tcRuntime };
-        await execution.execute(
-          tc.id,
-          routeGroup,
-          tcMerged,
-          variablesCtx.activeEnvironment,
-        );
-      }
+      await execution.executeAll(
+        endpointTests.map(tc => tc.id),
+        routeGroup,
+        variablesCtx.mergedVariables,
+        variablesCtx.activeEnvironment,
+      );
       setRunningAll(false);
     },
     [endpointTests, routeGroup, execution, variablesCtx],

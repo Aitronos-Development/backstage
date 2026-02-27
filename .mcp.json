@@ -1,9 +1,22 @@
 {
   "mcpServers": {
     "api-testing": {
+      "command": "/opt/homebrew/bin/node",
+      "args": [
+        "/Users/rahul/Documents/github/backstage/node_modules/.bin/tsx",
+        "/Users/rahul/Documents/github/backstage/plugins/api-testing-mcp-server/src/index.ts"
+      ],
+      "env": {
+        "NODE_PATH": "/Users/rahul/Documents/github/backstage/node_modules"
+      }
+    },
+    "bug-detector": {
       "command": "npx",
-      "args": ["tsx", "plugins/api-testing-mcp-server/src/index.ts"],
-      "cwd": "/Users/philliploacker/Documents/GitHub/backstage"
+      "args": [
+        "tsx",
+        "plugins/bug-detector-mcp-server/src/index.ts"
+      ],
+      "cwd": "/Users/rahul/Documents/github/backstage"
     }
   }
 }

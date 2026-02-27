@@ -4905,6 +4905,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@backstage/plugin-bug-detector-mcp-server@workspace:plugins/bug-detector-mcp-server":
+  version: 0.0.0-use.local
+  resolution: "@backstage/plugin-bug-detector-mcp-server@workspace:plugins/bug-detector-mcp-server"
+  dependencies:
+    "@backstage/cli": "workspace:^"
+    "@modelcontextprotocol/sdk": "npm:^1.25.2"
+    tsx: "npm:^4.21.0"
+    zod: "npm:^3.25.76"
+  languageName: unknown
+  linkType: soft
+
 "@backstage/plugin-catalog-backend-module-aws@workspace:plugins/catalog-backend-module-aws":
   version: 0.0.0-use.local
   resolution: "@backstage/plugin-catalog-backend-module-aws@workspace:plugins/catalog-backend-module-aws"
@@ -10177,6 +10188,7 @@ __metadata:
     "@material-ui/icons": "npm:^4.9.1"
     "@material-ui/lab": "npm:^4.0.0-alpha.61"
     "@types/react": "npm:^18.0.0"
+    clsx: "npm:^2.0.0"
     react: "npm:^18.0.2"
     react-dom: "npm:^18.0.2"
     react-router-dom: "npm:^6.30.2"

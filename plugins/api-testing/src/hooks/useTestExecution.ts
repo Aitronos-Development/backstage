@@ -88,6 +88,57 @@ export function useTestExecution() {
     [client, states],
   );
 
+  const executeAll = useCallback(
+    async (
+      testCaseIds: string[],
+      routeGroup: string,
+      variables?: Record<string, string>,
+      environment?: string,
+    ) => {
+      // Mark all tests as running
+      setStates(prev => {
+        const next = { ...prev };
+        for (const id of testCaseIds) {
+          next[id] = { status: 'running' };
+        }
+        return next;
+      });
+
+      try {
+        const results = await client.executeAll(
+          routeGroup,
+          variables,
+          environment,
+        );
+
+        // Update states from batch response
+        setStates(prev => {
+          const next = { ...prev };
+          for (const entry of results) {
+            next[entry.testCaseId] = {
+              status: entry.result.pass ? 'pass' : 'fail',
+              result: entry.result as ExecutionResult,
+            };
+          }
+          return next;
+        });
+
+        return results;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setStates(prev => {
+          const next = { ...prev };
+          for (const id of testCaseIds) {
+            next[id] = { status: 'fail', error: message };
+          }
+          return next;
+        });
+        return undefined;
+      }
+    },
+    [client],
+  );
+
   const reset = useCallback((testCaseId: string) => {
     setStates(prev => ({
       ...prev,
@@ -95,5 +146,5 @@ export function useTestExecution() {
     }));
   }, []);
 
-  return { getState, execute, stop, reset, states };
+  return { getState, execute, executeAll, stop, reset, states };
 }

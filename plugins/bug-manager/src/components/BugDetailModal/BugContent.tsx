@@ -19,7 +19,9 @@ import Box from '@material-ui/core/Box';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
+import { MarkdownContent } from '@backstage/core-components';
 import { Bug, UpdateBugRequest } from '../../api/types';
+import { MarkdownEditor } from '../shared/MarkdownEditor';
 import { CommentSection } from './CommentSection';
 
 const useStyles = makeStyles(theme => ({
@@ -33,7 +35,6 @@ const useStyles = makeStyles(theme => ({
   },
   descriptionDisplay: {
     cursor: 'pointer',
-    whiteSpace: 'pre-line',
     padding: theme.spacing(0.5),
     '&:hover': {
       backgroundColor: theme.palette.action.hover,
@@ -139,28 +140,35 @@ export const BugContent = ({ bug, onUpdate }: BugContentProps) => {
           Description
         </Typography>
         {!isEditingDescription ? (
-          <Typography
-            variant="body1"
-            onClick={() => {
-              setDescriptionValue(bug.description);
-              setIsEditingDescription(true);
-            }}
-            className={
-              bug.description ? classes.descriptionDisplay : classes.placeholder
-            }
-          >
-            {bug.description || 'Add a description...'}
-          </Typography>
+          bug.description ? (
+            <Box
+              onClick={() => {
+                setDescriptionValue(bug.description);
+                setIsEditingDescription(true);
+              }}
+              className={classes.descriptionDisplay}
+            >
+              <MarkdownContent content={bug.description} />
+            </Box>
+          ) : (
+            <Typography
+              variant="body1"
+              onClick={() => {
+                setDescriptionValue(bug.description);
+                setIsEditingDescription(true);
+              }}
+              className={classes.placeholder}
+            >
+              Add a description...
+            </Typography>
+          )
         ) : (
-          <TextField
-            fullWidth
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-            multiline
+          <MarkdownEditor
+            value={descriptionValue}
+            onChange={setDescriptionValue}
             minRows={4}
             maxRows={12}
-            value={descriptionValue}
-            onChange={e => setDescriptionValue(e.target.value)}
+            autoFocus
             onBlur={handleDescriptionSave}
             onKeyDown={e => {
               if (e.key === 'Escape') {
@@ -168,7 +176,7 @@ export const BugContent = ({ bug, onUpdate }: BugContentProps) => {
                 setIsEditingDescription(false);
               }
             }}
-            variant="outlined"
+            placeholder="Add a description..."
           />
         )}
       </Box>

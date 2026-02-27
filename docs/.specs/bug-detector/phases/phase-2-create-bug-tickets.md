@@ -1,0 +1,244 @@
+# Phase 2: create_bug_tickets Tool — Bug Manager Integration
+
+**Goal:** The MCP server can take parsed failure data and create bug tickets in the existing bug manager plugin, with proper formatting, deduplication, and sensitive data redaction.
+
+**Depends on:** Phase 1 (read_error_logs), existing `bug-manager-backend` REST API
+
+---
+
+## What this phase delivers
+
+- The `create_bug_tickets` tool — takes failure data and creates tickets via the bug manager API
+- Ticket heading and description generation following the spec format
+- Deduplication — skips creation if an open ticket already exists for the same endpoint + error signature
+- Sensitive data redaction in ticket descriptions
+- Bulk limit handling — groups into a summary ticket when failures exceed threshold
+
+## Technical design
+
+### create_bug_tickets tool
+
+**MCP tool name:** `create_bug_tickets`
+
+**Input schema:**
+```typescript
+{
+  failures: Array<{
+    execution_id: string;
+    timestamp: string;
+    test_case_id: string;
+    test_case_name: string;
+    route_group: string;
+    method: string;
+    endpoint: string;
+    actual_status: number;
+    failure_reason: string;
+    request: {
+      method: string;
+      url: string;
+      headers: Record<string, string>;
+      body?: unknown;
+    };
+    response: {
+      status_code: number;
+      headers: Record<string, string>;
+      body?: unknown;
+    };
+  }>;
+}
+```
+
+Alternatively, accept a shorthand:
+```typescript
+{
+  route_group: string;       // reads failures via read_error_logs internally
+  run_id?: string;           // optional filter
+}
+```
+
+When the shorthand form is used, the tool calls `read_error_logs` internally to fetch failures.
+
+**Output schema:**
+```typescript
+{
+  created: Array<{
+    ticket_number: string;   // e.g. "BUG-042"
+    bug_id: string;          // UUID
+    heading: string;
+    endpoint: string;
+  }>;
+  skipped_duplicates: Array<{
+    endpoint: string;
+    method: string;
+    existing_ticket_number: string;
+    reason: string;
+  }>;
+  summary: string;             // e.g. "Created 2 tickets, skipped 1 duplicate"
+}
+```
+
+### Bug manager API integration
+
+The bug manager backend exposes these endpoints (at `http://localhost:7007/api/bug-manager`):
+
+| Action | Method | Path | Body |
+|--------|--------|------|------|
+| List bugs (search) | GET | `/bugs?search=...&includeClosed=false` | — |
+| Create bug | POST | `/bugs` | `{ heading, description, statusId, priority, assigneeId }` |
+| List statuses | GET | `/statuses` | — |
+
+**Integration details:**
+
+1. **Fetch the default "open" status** — call `GET /statuses`, pick the status with the lowest `order` value (this is the "New" or "Open" status)
+2. **Create bugs** — call `POST /bugs` with:
+   - `heading`: generated heading (see format below)
+   - `description`: generated description (see format below)
+   - `statusId`: the default open status ID
+   - `priority`: derived from failure (see priority rules below)
+   - `assigneeId`: `null` (unassigned)
+
+**Authentication:** The MCP server runs on the same machine as Backstage. Use the internal service-to-service auth or the guest auth fallback (the bug manager router falls back to `user:default/guest` when no credentials are provided).
+
+### Ticket heading generation
+
+Format:
+```
+[API Test Failure] {METHOD} {endpoint} — {short_error_summary}
+```
+
+The `short_error_summary` is derived from the failure:
+- If `actual_status` is a well-known error code: use the status text (e.g., `500 Internal Server Error`, `403 Forbidden`)
+- If `failure_reason` contains "schema validation": use `Response schema validation failed`
+- If `failure_reason` contains "body_contains": use `Response body mismatch`
+- Otherwise: truncate `failure_reason` to 60 characters
+
+Examples:
+- `[API Test Failure] POST /v1/auth/login — 500 Internal Server Error`
+- `[API Test Failure] GET /v1/users/profile — Expected 200, got 403 Forbidden`
+- `[API Test Failure] PUT /v1/orders/123 — Response schema validation failed`
+
+### Ticket description generation
+
+Use the template from the overview spec. Map fields from `ExecutionRecord`:
+
+```markdown
+## Failed Test Details
+
+**Parent Route:** {route_group}
+**Endpoint:** {method} {endpoint}
+**Test Name:** {test_case_name}
+**Execution ID:** {execution_id}
+**Timestamp:** {timestamp}
+
+## Error Summary
+
+{failure_reason — plain language}
+
+## Error Details
+
+- **Expected:** {parsed from failure_reason if available}
+- **Actual:** Status {actual_status}
+- **Error Message:** {failure_reason}
+
+## Request Info
+
+- **Method:** {method}
+- **URL:** {endpoint}
+- **Headers:** {headers, with auth tokens already masked}
+- **Request Body:**
+```json
+{request.body — redacted}
+```
+
+## Response Info
+
+- **Status Code:** {response.status_code}
+- **Response Body:**
+```json
+{response.body — truncated to 2000 chars}
+```
+
+## Reproduction
+
+This failure was captured during automated test run `{execution_id}`.
+Re-trigger the parent route `{route_group}` test suite to verify.
+
+---
+*Auto-generated by Bug Detector MCP | Labels: `auto-generated`, `api-test`, `{route_group_slug}`*
+```
+
+### Sensitive data redaction
+
+Before inserting into the description, redact:
+- Request body fields matching: `password`, `secret`, `token`, `api_key`, `apiKey`, `authorization`, `credit_card`, `ssn` (case-insensitive) → replace value with `"[REDACTED]"`
+- Response body: same rules
+- Headers: `Authorization` is already masked by the history store; additionally redact any `X-Api-Key` or `Cookie` headers
+
+Implementation:
+```typescript
+function redactSensitive(obj: unknown): unknown {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  if (Array.isArray(obj)) return obj.map(redactSensitive);
+
+  const SENSITIVE = /password|secret|token|api[_-]?key|authorization|credit[_-]?card|ssn/i;
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    result[key] = SENSITIVE.test(key) ? '[REDACTED]' : redactSensitive(value);
+  }
+  return result;
+}
+```
+
+### Deduplication logic
+
+Before creating a ticket, check if an open bug already exists for the same failure signature.
+
+**Dedup signature:** `{method} {endpoint} — {short_error_summary}` (this is the heading without the `[API Test Failure]` prefix)
+
+**Process:**
+1. Call `GET /bugs?search={endpoint}&includeClosed=false`
+2. Check if any returned bug has a heading that contains the dedup signature
+3. If match found → skip creation, add to `skipped_duplicates` output
+4. If no match → create the ticket
+
+### Priority derivation
+
+| Condition | Priority |
+|-----------|----------|
+| `actual_status` is 5xx | `urgent` |
+| `actual_status` is 401 or 403 | `medium` |
+| `failure_reason` contains "timeout" | `urgent` |
+| Schema validation failure | `low` |
+| Default | `medium` |
+
+### Bulk limit handling
+
+If the input `failures` array has more than 20 items:
+- Create a single summary ticket instead of individual tickets
+- Heading: `[API Test Failure] {route_group} — {count} failures detected (systemic issue)`
+- Description: list each failed endpoint with its status code in a markdown table
+- Priority: `urgent`
+
+## Development process
+
+1. **Implement the ticket heading generator** — pure function, unit-testable
+2. **Implement the ticket description generator** — pure function with template rendering
+3. **Implement `redactSensitive`** — recursive field redaction
+4. **Implement the dedup check** — HTTP call to bug manager search endpoint
+5. **Implement priority derivation** — pure function mapping status codes / failure reasons
+6. **Implement bulk limit logic** — threshold check + summary ticket generator
+7. **Wire it all together in `createBugTickets.ts`** — orchestrates the full creation flow
+8. **Manual test** — run against real history data, verify tickets appear in bug manager UI
+
+## Acceptance criteria
+
+- [ ] `create_bug_tickets` with a list of failures creates one bug ticket per failure
+- [ ] Ticket headings follow the `[API Test Failure] METHOD /path — summary` format
+- [ ] Ticket descriptions include all sections from the template
+- [ ] Duplicate tickets are not created (dedup by heading match against open bugs)
+- [ ] Skipped duplicates are reported in the output
+- [ ] Sensitive fields (`password`, `token`, etc.) are redacted from descriptions
+- [ ] Response bodies over 2,000 chars in descriptions are truncated
+- [ ] 5xx errors produce `urgent` priority tickets
+- [ ] More than 20 failures produce a single summary ticket instead of individual ones
+- [ ] Created tickets are unassigned and use the lowest-order status

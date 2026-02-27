@@ -196,6 +196,10 @@ catalog:
     # File locations are relative to the current working directory of the
     # backend, for example packages/backend/.
 
+    # Org data — users and groups
+    - type: file
+      target: ../../examples/org.yaml
+
     # Freddy Backend — auto-discovered from the test repository submodule
     - type: file
       target: ../../test-repositories/Freddy.Backend.Tests/catalog-info.yaml
@@ -322,6 +326,9 @@ apiTesting:
   testRepository:
     url: https://github.com/Aitronos-Development/Freddy.Backend.Tests.git
     branch: main
+  bugDetector:
+    enabled: true
+    url: http://127.0.0.1:7009
   defaultEnvironment: develop
   environments:
     develop:

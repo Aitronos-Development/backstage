@@ -53,7 +53,7 @@ export function readOverrides(): EnvironmentOverrides {
 function writeOverrides(data: EnvironmentOverrides): void {
   ensureDir();
   const tmp = `${ENVIRONMENTS_FILE}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + '\n', 'utf-8');
+  fs.writeFileSync(tmp, `${JSON.stringify(data, null, 2)  }\n`, 'utf-8');
   fs.renameSync(tmp, ENVIRONMENTS_FILE);
 }
 
