@@ -35,6 +35,7 @@ export { EnvironmentSwitcher } from './components/EnvironmentSwitcher/Environmen
 export { VariableConfigPanel } from './components/VariableConfigPanel/VariableConfigPanel';
 export { EnvironmentSettingsPanel } from './components/EnvironmentSettingsPanel/EnvironmentSettingsPanel';
 export { FlowStepsPipeline } from './components/FlowStepsPipeline/FlowStepsPipeline';
+export { TestHistoryComponent } from './components/TestHistory/TestHistoryComponent';
 
 // Types
 export type {

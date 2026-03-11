@@ -1,0 +1,1 @@
+/Users/rahul/Documents/github/backstage/test-repositories/Freddy.Backend.Tests/.claude/agents/omni-scan-scout.md

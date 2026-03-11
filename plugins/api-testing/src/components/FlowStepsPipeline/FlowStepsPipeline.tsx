@@ -257,8 +257,10 @@ function getStepStatuses(
     return steps.map(stepName => {
       const logEntry = logSteps.find(s => s.name === stepName);
       if (!logEntry) {
-        const hasFailed = logSteps.some(s => s.status === 'fail');
-        return hasFailed ? 'skipped' : 'pending';
+        // No matching log entry — infer from overall result:
+        // if the test passed, this step passed too; if it failed,
+        // an unmatched step was likely skipped.
+        return testStatus === 'pass' ? 'pass' : 'skipped';
       }
       return logEntry.status === 'pass' ? 'pass' : 'fail';
     });

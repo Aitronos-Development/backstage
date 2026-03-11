@@ -21,6 +21,7 @@ import { registerEditTestCase } from './tools/editTestCase';
 import { registerDeleteTestCase } from './tools/deleteTestCase';
 import { registerRunTestCases } from './tools/runTestCases';
 import { registerGetExecutionHistory } from './tools/getExecutionHistory';
+import { testHistoryTool } from './tools/testHistory';
 import { watcher } from './storage';
 
 export function createMcpServer(): McpServer {
@@ -36,6 +37,14 @@ export function createMcpServer(): McpServer {
   registerDeleteTestCase(server);
   registerRunTestCases(server);
   registerGetExecutionHistory(server);
+
+  // Register test history tool
+  server.tool(
+    testHistoryTool.name,
+    testHistoryTool.description,
+    testHistoryTool.schema,
+    testHistoryTool.handler
+  );
 
   // Start file watcher for api-tests/ directory
   watcher.start();

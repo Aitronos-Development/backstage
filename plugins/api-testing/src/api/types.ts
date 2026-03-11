@@ -115,7 +115,7 @@ export interface ResolvedVariable {
 export interface ExecutionRecord {
   id: string;
   timestamp: string;
-  initiator: 'user' | 'agent';
+  initiator: 'user' | 'agent' | 'orchestrator';
   agent_identity?: string;
   test_case_id: string;
   test_case_name: string;

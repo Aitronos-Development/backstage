@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import type { ExecutionResult, TestStatus } from '../api/types';
 import { useApiTestingClient } from './useTestCases';
 
@@ -24,14 +24,22 @@ interface TestExecutionState {
   error?: string;
 }
 
+const IDLE_STATE: TestExecutionState = { status: 'idle' };
+
 export function useTestExecution() {
   const client = useApiTestingClient();
   const [states, setStates] = useState<Record<string, TestExecutionState>>({});
 
+  // Keep a ref to the latest states so callbacks don't need states in their
+  // dependency arrays (which would recreate the callbacks on every state change
+  // and destabilize the returned object).
+  const statesRef = useRef(states);
+  statesRef.current = states;
+
   const getState = useCallback(
     (testCaseId: string): TestExecutionState =>
-      states[testCaseId] || { status: 'idle' },
-    [states],
+      statesRef.current[testCaseId] || IDLE_STATE,
+    [],
   );
 
   const execute = useCallback(
@@ -41,9 +49,11 @@ export function useTestExecution() {
       variables?: Record<string, string>,
       environment?: string,
     ) => {
+      // Generate executionId upfront so stop() can use it immediately
+      const executionId = `exec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       setStates(prev => ({
         ...prev,
-        [testCaseId]: { status: 'running' },
+        [testCaseId]: { status: 'running', executionId },
       }));
 
       try {
@@ -52,6 +62,8 @@ export function useTestExecution() {
           routeGroup,
           variables,
           environment,
+          undefined,
+          executionId,
         );
         setStates(prev => ({
           ...prev,
@@ -76,7 +88,7 @@ export function useTestExecution() {
 
   const stop = useCallback(
     async (testCaseId: string) => {
-      const state = states[testCaseId];
+      const state = statesRef.current[testCaseId];
       if (state?.executionId) {
         await client.stopExecution(state.executionId);
       }
@@ -85,7 +97,7 @@ export function useTestExecution() {
         [testCaseId]: { status: 'idle' },
       }));
     },
-    [client, states],
+    [client],
   );
 
   const executeAll = useCallback(
@@ -109,6 +121,8 @@ export function useTestExecution() {
           routeGroup,
           variables,
           environment,
+          undefined,
+          testCaseIds,
         );
 
         // Update states from batch response
@@ -146,5 +160,11 @@ export function useTestExecution() {
     }));
   }, []);
 
-  return { getState, execute, executeAll, stop, reset, states };
+  // Return a stable object reference that only changes when states changes.
+  // The callbacks above are stable (they use refs instead of states in deps),
+  // so this memo only re-fires when states actually changes.
+  return useMemo(
+    () => ({ getState, execute, executeAll, stop, reset, states }),
+    [getState, execute, executeAll, stop, reset, states],
+  );
 }

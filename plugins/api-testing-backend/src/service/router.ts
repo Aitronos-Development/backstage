@@ -45,6 +45,12 @@ import {
   fireBugDetectorHook,
   type BugDetectorConfig,
 } from './bugDetectorHook';
+import {
+  triggerOrchestrator,
+  getOrchestratorStatus,
+  getOrchestratorHistory,
+  cancelOrchestrator
+} from './orchestratorHandler';
 
 export interface RouterOptions {
   logger: LoggerService;
@@ -204,6 +210,11 @@ const setupCache = new Map<
   { variables: Record<string, string>; expiresAt: number }
 >();
 
+// In-flight setup promises to coalesce concurrent requests for the same environment.
+// When N parallel /execute requests arrive simultaneously, only the first one actually
+// runs the setup steps; the rest await the same promise.
+const setupInflight = new Map<string, Promise<Record<string, string>>>();
+
 /**
  * Execute environment-level setup steps (e.g. authenticate, create test data).
  * Each step is an HTTP call whose response values can be captured as variables.
@@ -224,6 +235,32 @@ async function executeSetupSteps(
     return { ...cached.variables };
   }
 
+  // Coalesce concurrent requests: if another request is already running setup
+  // for this environment, wait for it instead of running setup again.
+  const inflight = setupInflight.get(envName);
+  if (inflight) {
+    logger.info(`Waiting for in-flight setup for environment '${envName}'`);
+    const result = await inflight;
+    return { ...result };
+  }
+
+  const promise = executeSetupStepsInner(envName, steps, baseUrl, baseVariables, logger);
+  setupInflight.set(envName, promise);
+  try {
+    const result = await promise;
+    return result;
+  } finally {
+    setupInflight.delete(envName);
+  }
+}
+
+async function executeSetupStepsInner(
+  envName: string,
+  steps: SetupStep[],
+  baseUrl: string,
+  baseVariables: Record<string, string>,
+  logger: LoggerService,
+): Promise<Record<string, string>> {
   const variables = { ...baseVariables };
 
   for (const step of steps) {
@@ -572,6 +609,10 @@ export async function createRouter(
   router.post('/execute', async (req, res) => {
     const { testCaseId, routeGroup, variables, environment } = req.body;
 
+    // Determine initiator: check for agent header, body param, or default to user
+    const initiator = req.body.initiator ||
+                     (req.headers['x-agent-identity'] ? 'agent' : 'user');
+
     if (!testCaseId || !routeGroup) {
       throw new InputError('testCaseId and routeGroup are required');
     }
@@ -605,7 +646,8 @@ export async function createRouter(
     }
     Object.assign(mergedVariables, variables || {});
 
-    const executionId = `exec-${Date.now()}-${Math.random()
+    // Accept client-provided executionId so the frontend can abort before response
+    const executionId = req.body.executionId || `exec-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)}`;
     const controller = new AbortController();
@@ -614,7 +656,7 @@ export async function createRouter(
     try {
       const result =
         testCase.method === 'FLOW'
-          ? await executeFlowTest(testCase, controller.signal)
+          ? await executeFlowTest(testCase, mergedVariables, controller.signal)
           : await executeTestCase(testCase, mergedVariables, controller.signal);
 
       // Write history record
@@ -622,7 +664,8 @@ export async function createRouter(
         testCaseId: testCase.id,
         testCaseName: testCase.name,
         routeGroup,
-        initiator: 'user',
+        initiator: initiator || 'user',  // Use provided initiator or default to 'user'
+        agentIdentity: initiator === 'agent' ? req.headers['x-agent-identity'] as string : undefined,
         durationMs: result.responseTime,
         pass: result.pass,
         failureReason: result._failureReason,
@@ -668,7 +711,11 @@ export async function createRouter(
 
   // --- Run all test cases for a route group ---
   router.post('/execute-all', async (req, res) => {
-    const { routeGroup, variables, environment } = req.body;
+    const { routeGroup, variables, environment, testCaseIds } = req.body;
+
+    // Determine initiator: check for agent header, body param, or default to user
+    const initiator = req.body.initiator ||
+                     (req.headers['x-agent-identity'] ? 'agent' : 'user');
 
     if (!routeGroup) {
       throw new InputError('routeGroup is required');
@@ -696,7 +743,12 @@ export async function createRouter(
     }
     Object.assign(mergedVariables, variables || {});
 
-    const testCases = await listTestCases(routeGroup);
+    let testCases = await listTestCases(routeGroup);
+    // If specific test case IDs were requested, filter to only those
+    if (Array.isArray(testCaseIds) && testCaseIds.length > 0) {
+      const idSet = new Set(testCaseIds);
+      testCases = testCases.filter(tc => idSet.has(tc.id));
+    }
     const results: Array<{
       testCaseId: string;
       result: {
@@ -715,7 +767,7 @@ export async function createRouter(
       try {
         const result =
           tc.method === 'FLOW'
-            ? await executeFlowTest(tc, controller.signal)
+            ? await executeFlowTest(tc, mergedVariables, controller.signal)
             : await executeTestCase(tc, mergedVariables, controller.signal);
 
         // Write history record
@@ -723,7 +775,8 @@ export async function createRouter(
           testCaseId: tc.id,
           testCaseName: tc.name,
           routeGroup,
-          initiator: 'user',
+          initiator: initiator || 'user',  // Use provided initiator or default to 'user'
+          agentIdentity: initiator === 'agent' ? req.headers['x-agent-identity'] as string : undefined,
           durationMs: result.responseTime,
           pass: result.pass,
           failureReason: result._failureReason,
@@ -812,6 +865,138 @@ export async function createRouter(
     }
   });
 
+  // --- History: UI summary across all route groups ---
+  router.get('/history/summary', async (_req, res) => {
+    const historyBase = path.join(process.cwd(), 'api-tests/.history');
+    if (!fs.existsSync(historyBase)) {
+      res.json({ routes: [] });
+      return;
+    }
+
+    const dirs = fs.readdirSync(historyBase, { withFileTypes: true })
+      .filter(d => d.isDirectory());
+
+    const routes: Array<{
+      route: string;
+      totalRuns: number;
+      lastRun: string;
+      lastRunId: string;
+      lastDuration: string;
+      passRate: string;
+      bugsFound: number;
+      grade: string;
+    }> = [];
+
+    for (const dir of dirs) {
+      const dirPath = path.join(historyBase, dir.name);
+      const latestPath = path.join(dirPath, 'latest.json');
+      const historyFile = path.join(dirPath, 'history.jsonl');
+
+      let totalRuns = 0;
+      if (fs.existsSync(historyFile)) {
+        const content = fs.readFileSync(historyFile, 'utf-8').trim();
+        totalRuns = content ? content.split('\n').length : 0;
+      }
+      // Count latest.json as a run if no history.jsonl
+      if (totalRuns === 0 && fs.existsSync(latestPath)) {
+        totalRuns = 1;
+      }
+      if (totalRuns === 0) continue;
+
+      let latest: any = null;
+      if (fs.existsSync(latestPath)) {
+        latest = JSON.parse(fs.readFileSync(latestPath, 'utf-8'));
+      } else if (fs.existsSync(historyFile)) {
+        const lines = fs.readFileSync(historyFile, 'utf-8').trim().split('\n');
+        latest = JSON.parse(lines[lines.length - 1]);
+      }
+      if (!latest) continue;
+
+      // Normalize certificate vs summary format
+      const cert = latest.certificate || latest.summary || {};
+      const routeName = latest.route || `/${dir.name.replace(/-/g, '/')}`;
+      const passed = cert.passed ?? 0;
+      const total = cert.totalTests ?? 0;
+      const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+
+      routes.push({
+        route: routeName,
+        totalRuns,
+        lastRun: latest.timestamp || new Date().toISOString(),
+        lastRunId: latest.runId || 'unknown',
+        lastDuration: `${Math.round((latest.duration || 0) / 1000)}s`,
+        passRate: `${passRate}%`,
+        bugsFound: cert.bugsFound ?? 0,
+        grade: cert.performanceGrade || 'N/A',
+      });
+    }
+
+    res.json({ routes });
+  });
+
+  // --- History: UI detail for a specific route ---
+  router.get('/history', async (req, res) => {
+    const route = req.query.route as string | undefined;
+    if (!route) {
+      res.status(400).json({ error: 'route query parameter is required' });
+      return;
+    }
+
+    const dirName = route.replace(/^\//, '').replace(/\//g, '-');
+    const historyBase = path.join(process.cwd(), 'api-tests/.history');
+    // Check both with and without leading dash
+    const candidates = [
+      path.join(historyBase, dirName),
+      path.join(historyBase, `-${dirName}`),
+    ];
+
+    const runs: any[] = [];
+    for (const dirPath of candidates) {
+      const historyFile = path.join(dirPath, 'history.jsonl');
+      if (fs.existsSync(historyFile)) {
+        const lines = fs.readFileSync(historyFile, 'utf-8').trim().split('\n').filter(Boolean);
+        for (const line of lines) {
+          const entry = JSON.parse(line);
+          // Normalize to certificate format for UI
+          if (entry.summary && !entry.certificate) {
+            entry.certificate = {
+              totalTests: entry.summary.totalTests ?? 0,
+              passed: entry.summary.passed ?? 0,
+              bugsFound: 0,
+              bugIds: [],
+              flakyTests: 0,
+              invalidTests: 0,
+              codeCoverage: 0,
+              performanceGrade: entry.summary.performanceGrade || 'N/A',
+            };
+          }
+          runs.push(entry);
+        }
+      }
+      const latestPath = path.join(dirPath, 'latest.json');
+      if (fs.existsSync(latestPath) && runs.length === 0) {
+        const entry = JSON.parse(fs.readFileSync(latestPath, 'utf-8'));
+        if (entry.summary && !entry.certificate) {
+          entry.certificate = {
+            totalTests: entry.summary.totalTests ?? 0,
+            passed: entry.summary.passed ?? 0,
+            bugsFound: 0,
+            bugIds: [],
+            flakyTests: 0,
+            invalidTests: 0,
+            codeCoverage: 0,
+            performanceGrade: entry.summary.performanceGrade || 'N/A',
+          };
+        }
+        runs.push(entry);
+      }
+    }
+
+    // Sort most recent first
+    runs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    res.json({ history: runs });
+  });
+
   // --- History: per-endpoint ---
   router.get('/history/:routeGroup(*)/:testCaseId', async (req, res) => {
     const routeGroup = `/${req.params.routeGroup}`;
@@ -855,6 +1040,163 @@ export async function createRouter(
     res.json(records);
   });
 
+  // Simplified orchestrator route - wraps existing execute-all with history tracking
+  router.post('/orchestrator/run/:routeGroup(*)', async (req, res) => {
+    const routeGroup = `/${req.params.routeGroup}`;
+    const { variables, environment } = req.body;
+
+    // Generate orchestrator run ID
+    const runId = `run-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    const startTime = Date.now();
+
+    logger.info(`[Orchestrator ${runId}] Starting test run for ${routeGroup}`);
+
+    // Build merged variables using existing logic
+    const currentConfig = getApiTestingConfig();
+    const envName = environment || currentConfig.defaultEnvironment;
+    const envConfig = currentConfig.environments[envName];
+    let mergedVariables: Record<string, string> = {};
+
+    if (envConfig) {
+      if (envConfig.baseUrl) mergedVariables.base_url = envConfig.baseUrl;
+      Object.assign(mergedVariables, envConfig.variables);
+
+      // Run environment setup steps (e.g. authenticate)
+      if (envConfig.setup && envConfig.setup.length > 0) {
+        mergedVariables = await executeSetupSteps(
+          envName,
+          envConfig.setup,
+          envConfig.baseUrl,
+          mergedVariables,
+          logger,
+        );
+      }
+    }
+    Object.assign(mergedVariables, variables || {});
+
+    // Get all test cases and execute them
+    const testCases = await listTestCases(routeGroup);
+    const results = [];
+    let passed = 0;
+    let failed = 0;
+
+    for (const tc of testCases) {
+      const controller = new AbortController();
+      try {
+        const result =
+          tc.method === 'FLOW'
+            ? await executeFlowTest(tc, mergedVariables, controller.signal)
+            : await executeTestCase(tc, mergedVariables, controller.signal);
+
+        // Write history record (per-endpoint as before)
+        const record = buildExecutionRecord({
+          testCaseId: tc.id,
+          testCaseName: tc.name,
+          routeGroup,
+          initiator: 'orchestrator',
+          durationMs: result.responseTime,
+          pass: result.pass,
+          failureReason: result._failureReason,
+          request: result._request,
+          response: result._response,
+          flowStepLog: result.details.flowStepLog,
+        });
+        await historyStore.append(routeGroup, tc.id, record);
+
+        // Track results
+        results.push({
+          testCaseId: tc.id,
+          pass: result.pass,
+          responseTime: result.responseTime,
+        });
+
+        if (result.pass) {
+          passed++;
+        } else {
+          failed++;
+        }
+
+        // Broadcast execution-completed event
+        broadcast({
+          type: 'execution-completed',
+          routeGroup,
+          testCaseId: tc.id,
+          record,
+        });
+
+      } catch (error: any) {
+        logger.error(`[Orchestrator ${runId}] Test ${tc.id} failed:`, error);
+        failed++;
+        results.push({
+          testCaseId: tc.id,
+          pass: false,
+          responseTime: 0,
+        });
+      }
+    }
+
+    // Calculate summary
+    const duration = Date.now() - startTime;
+    const passRate = testCases.length > 0 ? Math.round((passed / testCases.length) * 100) : 0;
+    const performanceGrade =
+      passRate >= 90 ? 'A' :
+      passRate >= 80 ? 'B' :
+      passRate >= 70 ? 'C' :
+      passRate >= 60 ? 'D' : 'F';
+
+    // Save orchestrator history
+    const orchestratorHistory = {
+      runId,
+      route: routeGroup,
+      timestamp: new Date().toISOString(),
+      duration,
+      summary: {
+        totalTests: testCases.length,
+        passed,
+        failed,
+        passRate,
+        performanceGrade,
+      },
+      metadata: {
+        environment: envName,
+        triggeredBy: 'manual-ui',
+      },
+      results,
+    };
+
+    // Save to orchestrator history directory
+    const historyPath = path.join(
+      process.cwd(),
+      'api-tests/.history',
+      routeGroup.replace(/\//g, '-')
+    );
+    await fs.promises.mkdir(historyPath, { recursive: true });
+
+    const historyFile = path.join(historyPath, 'history.jsonl');
+    await fs.promises.appendFile(
+      historyFile,
+      JSON.stringify(orchestratorHistory) + '\n',
+      'utf8'
+    );
+
+    const latestFile = path.join(historyPath, 'latest.json');
+    await fs.promises.writeFile(
+      latestFile,
+      JSON.stringify(orchestratorHistory, null, 2),
+      'utf8'
+    );
+
+    logger.info(`[Orchestrator ${runId}] Completed. Passed: ${passed}/${testCases.length} (${passRate}%, Grade: ${performanceGrade})`);
+
+    res.json({
+      runId,
+      routeGroup,
+      status: 'completed',
+      summary: orchestratorHistory.summary,
+      duration,
+    });
+  });
+
   return router;
 }
 
@@ -894,16 +1236,26 @@ function stripFlowStepLog(output: string): string {
 
 async function executeFlowTest(
   testCase: TestCase,
+  variables: Record<string, string>,
   signal: AbortSignal,
 ): Promise<ExecutionResult> {
   const pytestNodeId = testCase.path;
 
   return new Promise((resolve, reject) => {
     const start = Date.now();
+    // Inject merged variables as environment variables for the pytest subprocess
+    const envVars: Record<string, string> = { ...process.env as Record<string, string> };
+    if (variables.base_url) envVars.FREDDY_BASE_URL = variables.base_url;
+    if (variables.auth_token) envVars.FREDDY_AUTH_TOKEN = variables.auth_token;
+    if (variables.org_id) envVars.FREDDY_ORG_ID = variables.org_id;
+    // Pass all variables with a BACKSTAGE_VAR_ prefix for general access
+    for (const [key, value] of Object.entries(variables)) {
+      envVars[`BACKSTAGE_VAR_${key.toUpperCase()}`] = value;
+    }
     const proc = spawn(
       'uv',
       ['run', 'pytest', pytestNodeId, '-v', '--tb=short', '--no-header', '-s'],
-      { cwd: FLOW_TESTS_DIR, env: { ...process.env } },
+      { cwd: FLOW_TESTS_DIR, env: envVars },
     );
 
     let stdout = '';

@@ -23,7 +23,14 @@ const API_TESTS_DIR = path.resolve(
   '../../../../test-repositories/Freddy.Backend.Tests/test-suites',
 );
 
+const FLOW_REGISTRATIONS_PATH = path.resolve(
+  // eslint-disable-next-line no-restricted-syntax -- resolving relative to package source directory
+  __dirname,
+  '../../../../test-repositories/Freddy.Backend.Tests/flow-test-registrations.json',
+);
+
 const cache = new Map<string, RouteGroupFile>();
+let flowRegistrationsCache: TestCase[] | undefined;
 
 function routeGroupToFilename(routeGroup: string): string {
   return `${routeGroup.replace(/^\//, '').replace(/\//g, '-')}.json`;
@@ -33,28 +40,69 @@ function getFilePath(routeGroup: string): string {
   return path.join(API_TESTS_DIR, routeGroupToFilename(routeGroup));
 }
 
+function loadFlowRegistrations(): TestCase[] {
+  if (flowRegistrationsCache) return flowRegistrationsCache;
+
+  if (!fs.existsSync(FLOW_REGISTRATIONS_PATH)) {
+    flowRegistrationsCache = [];
+    return flowRegistrationsCache;
+  }
+
+  const raw = fs.readFileSync(FLOW_REGISTRATIONS_PATH, 'utf-8');
+  flowRegistrationsCache = JSON.parse(raw) as TestCase[];
+  return flowRegistrationsCache;
+}
+
+function getFlowTestsForRouteGroup(routeGroup: string): TestCase[] {
+  const registrations = loadFlowRegistrations();
+  // Extract domain from route group, handling both "/v1/model" and encoded "/v1-model"
+  const clean = routeGroup.replace(/^\//, '').replace(/\/$/, '');
+  // Try slash-separated first (e.g. "v1/model" → "model"), fall back to dash-separated
+  const segments = clean.includes('/') ? clean.split('/') : clean.split('-');
+  const domain = segments[segments.length - 1];
+  if (!domain) return [];
+
+  return registrations.filter(
+    tc =>
+      tc.flow_metadata?.markers?.includes(domain),
+  );
+}
+
 export function loadRouteGroup(routeGroup: string): RouteGroupFile {
   const cached = cache.get(routeGroup);
   if (cached) return cached;
 
   const filePath = getFilePath(routeGroup);
+  let data: RouteGroupFile;
+
   if (!fs.existsSync(filePath)) {
-    const empty: RouteGroupFile = {
+    data = {
       route_group: routeGroup,
       test_cases: [],
     };
-    cache.set(routeGroup, empty);
-    return empty;
+  } else {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    data = JSON.parse(raw);
   }
 
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  const data: RouteGroupFile = JSON.parse(raw);
+  // Merge flow tests from the central registrations file, deduplicating by id
+  const flowTests = getFlowTestsForRouteGroup(routeGroup);
+  if (flowTests.length > 0) {
+    const existingIds = new Set(data.test_cases.map(tc => tc.id));
+    for (const ft of flowTests) {
+      if (!existingIds.has(ft.id)) {
+        data.test_cases.push(ft);
+      }
+    }
+  }
+
   cache.set(routeGroup, data);
   return data;
 }
 
 export function invalidateCache(routeGroup: string): void {
   cache.delete(routeGroup);
+  flowRegistrationsCache = undefined;
 }
 
 export async function listTestCases(routeGroup: string): Promise<TestCase[]> {

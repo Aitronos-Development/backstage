@@ -31,6 +31,8 @@ import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   useRouteGroups,
@@ -157,6 +159,7 @@ function RouteGroupAccordion({
   const classes = useStyles();
   const { testCases, loading, refresh } = useTestCases(routeGroup);
   const execution = useTestExecution();
+  const client = useApiTestingClient();
   const [runningAll, setRunningAll] = useState(false);
 
   const prevRefreshKeyRef = useRef(refreshKey);
@@ -172,7 +175,8 @@ function RouteGroupAccordion({
     if (statuses.some(s => s === 'fail')) return 'fail';
     if (statuses.length > 0 && statuses.every(s => s === 'pass')) return 'pass';
     return 'neutral';
-  }, [testCases, execution, runningAll, loading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testCases, execution.states, runningAll, loading]);
 
   const statusDotClass = {
     neutral: classes.statusNeutral,
@@ -185,15 +189,35 @@ function RouteGroupAccordion({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       setRunningAll(true);
-      await execution.executeAll(
-        testCases.map(tc => tc.id),
-        routeGroup,
-        variablesCtx.mergedVariables,
-        variablesCtx.activeEnvironment,
-      );
-      setRunningAll(false);
+      try {
+        // Use orchestrator for running all tests
+        const result = await client.runWithOrchestrator(
+          routeGroup,
+          variablesCtx.mergedVariables,
+          variablesCtx.activeEnvironment,
+        );
+        console.log('Orchestrator completed:', result);
+
+        // Refresh test cases to show updated history
+        refresh();
+
+        // Show success message
+        console.log(`✅ Test run completed: ${result.summary.passed}/${result.summary.totalTests} passed (Grade: ${result.summary.performanceGrade})`);
+      } catch (error) {
+        console.error('Failed to run tests:', error);
+        // Fallback to original execution method if orchestrator fails
+        await execution.executeAll(
+          testCases.map(tc => tc.id),
+          routeGroup,
+          variablesCtx.mergedVariables,
+          variablesCtx.activeEnvironment,
+        );
+      } finally {
+        setRunningAll(false);
+      }
     },
-    [testCases, routeGroup, execution, variablesCtx],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [testCases, routeGroup, execution.executeAll, variablesCtx.mergedVariables, variablesCtx.activeEnvironment, client, refresh],
   );
 
   return (
@@ -264,7 +288,7 @@ function RouteGroupAccordion({
         )}
         {testCases.length > 0 && (
           <Box className={classes.routeGroupFooter}>
-            <Tooltip title="Run all tests in this group">
+            <Tooltip title="Run all tests in this group (with orchestration)">
               <Box component="span">
                 <IconButton
                   size="small"
@@ -276,7 +300,7 @@ function RouteGroupAccordion({
                 </IconButton>
               </Box>
             </Tooltip>
-            <Typography variant="caption" color="textSecondary">
+            <Typography variant="caption" color="textSecondary" style={{ marginRight: 16 }}>
               Run all {testCases.length} test
               {testCases.length !== 1 ? 's' : ''}
             </Typography>

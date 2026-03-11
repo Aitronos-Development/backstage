@@ -255,7 +255,10 @@ function FlowRouteGroupAccordion({
     if (statuses.some(s => s === 'fail')) return 'fail';
     if (statuses.length > 0 && statuses.every(s => s === 'pass')) return 'pass';
     return 'neutral';
-  }, [flowTests, execution, runningAll, loading]);
+    // Depend on execution.states (the primitive map) rather than the execution
+    // object itself, so that this memo only recomputes when states actually change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowTests, execution.states, runningAll, loading]);
 
   const statusDotClass = {
     neutral: classes.statusNeutral,
@@ -268,19 +271,27 @@ function FlowRouteGroupAccordion({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       setRunningAll(true);
-      await execution.executeAll(
-        flowTests.map(tc => tc.id),
-        routeGroup,
-        variablesCtx.mergedVariables,
-        variablesCtx.activeEnvironment,
-      );
-      setRunningAll(false);
+      try {
+        // Execute each flow test individually in parallel so the UI updates
+        // per-test as each one completes, instead of waiting for a single
+        // batch HTTP response that blocks until every test finishes.
+        await Promise.all(
+          flowTests.map(tc =>
+            execution.execute(
+              tc.id,
+              routeGroup,
+              variablesCtx.mergedVariables,
+              variablesCtx.activeEnvironment,
+            ),
+          ),
+        );
+      } finally {
+        setRunningAll(false);
+      }
     },
-    [flowTests, routeGroup, execution, variablesCtx],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [flowTests, routeGroup, execution.execute, variablesCtx.mergedVariables, variablesCtx.activeEnvironment],
   );
-
-  // Don't render if this route group has no flow tests
-  if (!loading && flowTests.length === 0) return null;
 
   return (
     <Accordion
@@ -304,67 +315,77 @@ function FlowRouteGroupAccordion({
       </AccordionSummary>
       <AccordionDetails className={classes.accordionDetails}>
         {loading && <LinearProgress />}
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Type</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>File</TableCell>
-              <TableCell>Result</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {flowTests.map(tc => {
-              const state = execution.getState(tc.id);
-              const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
-              const tcMerged = {
-                ...variablesCtx.mergedVariables,
-                ...tcRuntime,
-              };
-              return (
-                <TestCaseRow
-                  key={tc.id}
-                  testCase={tc}
-                  routeGroup={routeGroup}
-                  status={state.status}
-                  result={state.result}
-                  error={state.error}
-                  onExecute={() =>
-                    execution.execute(
-                      tc.id,
-                      routeGroup,
-                      tcMerged,
-                      variablesCtx.activeEnvironment,
-                    )
-                  }
-                  onStop={() => execution.stop(tc.id)}
-                  runtimeOverrides={tcRuntime}
-                  onSetRuntimeOverride={(key, value) =>
-                    variablesCtx.setRuntimeOverride(tc.id, key, value)
-                  }
-                  onRemoveRuntimeOverride={key =>
-                    variablesCtx.removeRuntimeOverride(tc.id, key)
-                  }
-                  mergedVariables={variablesCtx.mergedVariables}
-                />
-              );
-            })}
-          </TableBody>
-        </Table>
-        {flowTests.length > 0 && (
-          <Box className={classes.routeGroupFooter}>
-            <Button
-              variant="outlined"
-              size="small"
-              className={classes.runAllButton}
-              onClick={handleRunAll}
-              disabled={runningAll || loading}
-              startIcon={<PlayArrowIcon style={{ fontSize: 16 }} />}
-            >
-              Run all {flowTests.length} flow{flowTests.length !== 1 ? 's' : ''}
-            </Button>
+        {!loading && flowTests.length === 0 ? (
+          <Box style={{ padding: '16px 0', textAlign: 'center' }}>
+            <Typography variant="body2" color="textSecondary">
+              No flow tests yet
+            </Typography>
           </Box>
+        ) : (
+          <>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Name</TableCell>
+                  <TableCell>File</TableCell>
+                  <TableCell>Result</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {flowTests.map(tc => {
+                  const state = execution.getState(tc.id);
+                  const tcRuntime = variablesCtx.runtimeOverrides[tc.id] ?? {};
+                  const tcMerged = {
+                    ...variablesCtx.mergedVariables,
+                    ...tcRuntime,
+                  };
+                  return (
+                    <TestCaseRow
+                      key={tc.id}
+                      testCase={tc}
+                      routeGroup={routeGroup}
+                      status={state.status}
+                      result={state.result}
+                      error={state.error}
+                      onExecute={() =>
+                        execution.execute(
+                          tc.id,
+                          routeGroup,
+                          tcMerged,
+                          variablesCtx.activeEnvironment,
+                        )
+                      }
+                      onStop={() => execution.stop(tc.id)}
+                      runtimeOverrides={tcRuntime}
+                      onSetRuntimeOverride={(key, value) =>
+                        variablesCtx.setRuntimeOverride(tc.id, key, value)
+                      }
+                      onRemoveRuntimeOverride={key =>
+                        variablesCtx.removeRuntimeOverride(tc.id, key)
+                      }
+                      mergedVariables={variablesCtx.mergedVariables}
+                    />
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {flowTests.length > 0 && (
+              <Box className={classes.routeGroupFooter}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  className={classes.runAllButton}
+                  onClick={handleRunAll}
+                  disabled={runningAll || loading}
+                  startIcon={<PlayArrowIcon style={{ fontSize: 16 }} />}
+                >
+                  Run all {flowTests.length} flow{flowTests.length !== 1 ? 's' : ''}
+                </Button>
+              </Box>
+            )}
+          </>
         )}
       </AccordionDetails>
     </Accordion>

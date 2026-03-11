@@ -1,0 +1,1 @@
+/Users/rahul/Documents/github/backstage/test-repositories/Freddy.Backend.Tests/.claude/agents/strategic-test-architect.md

@@ -62,7 +62,7 @@ export function buildExecutionRecord(opts: {
   testCaseId: string;
   testCaseName: string;
   routeGroup: string;
-  initiator: 'user' | 'agent';
+  initiator: 'user' | 'agent' | 'orchestrator';
   agentIdentity?: string;
   durationMs: number;
   pass: boolean;

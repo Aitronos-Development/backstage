@@ -1,0 +1,3641 @@
+{
+  "route_group": "/v1/model",
+  "test_cases": [
+    {
+      "id": "tc-qy9tyb",
+      "name": "AUTH-MODELS-001: List models without auth returns 401",
+      "method": "GET",
+      "path": "/v1/models",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-hnn5vs",
+      "name": "AUTH-MODELS-002: List models with invalid Bearer token returns 401",
+      "method": "GET",
+      "path": "/v1/models",
+      "headers": {
+        "Authorization": "Bearer invalid_token_abc123"
+      },
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-oiy35t",
+      "name": "AUTH-MODELS-003: List models with valid Bearer token returns 200",
+      "method": "GET",
+      "path": "/v1/models",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "models",
+            "total_count"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-p73axv",
+      "name": "AUTH-MODELS-004: List models with valid API key returns 200",
+      "method": "GET",
+      "path": "/v1/models",
+      "headers": {
+        "X-API-Key": "{{api_key}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "models",
+            "total_count"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-q7824s",
+      "name": "FILTER-MODELS-005: List models with ui_models_only=true filters correctly",
+      "method": "GET",
+      "path": "/v1/models?ui_models_only=true",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "models",
+            "total_count"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-8q94nf",
+      "name": "FILTER-MODELS-006: List models with include_capabilities=false omits capabilities",
+      "method": "GET",
+      "path": "/v1/models?include_capabilities=false",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "models",
+            "total_count"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-8kwuks",
+      "name": "FILTER-MODELS-007: List models with include_pricing=true includes pricing",
+      "method": "GET",
+      "path": "/v1/models?include_pricing=true",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "models",
+            "total_count"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-9c8z16",
+      "name": "FILTER-MODELS-008: List models with include_details=true includes extended fields",
+      "method": "GET",
+      "path": "/v1/models?include_details=true",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "models",
+            "total_count"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-y6m0i5",
+      "name": "FILTER-MODELS-009: List models with include_deprecated=true includes deprecated",
+      "method": "GET",
+      "path": "/v1/models?include_deprecated=true",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "models",
+            "total_count"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-4q7yw2",
+      "name": "CACHE-MODELS-010: List models returns expected response structure",
+      "method": "GET",
+      "path": "/v1/models",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_schema": {
+          "required_fields": [
+            "models",
+            "total_count"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-xmwp2w",
+      "name": "AUTH-OUTMODE-001: Output modes without auth returns 401",
+      "method": "GET",
+      "path": "/v1/model/response/output-modes",
+      "headers": {},
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-sbbouv",
+      "name": "HAPPY-OUTMODE-002: Output modes with valid auth returns correct modes",
+      "method": "GET",
+      "path": "/v1/model/response/output-modes",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_contains": {
+          "success": true
+        },
+        "body_schema": {
+          "required_fields": [
+            "success",
+            "output_modes"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-5qltvh",
+      "name": "HAPPY-OUTMODE-003: Output modes with API key auth returns 200",
+      "method": "GET",
+      "path": "/v1/model/response/output-modes",
+      "headers": {
+        "X-API-Key": "{{api_key}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_contains": {
+          "success": true
+        },
+        "body_schema": {
+          "required_fields": [
+            "success",
+            "output_modes"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-udqk56",
+      "name": "AUTH-REASON-001: Reasoning levels without auth returns 401",
+      "method": "GET",
+      "path": "/v1/model/response/reasoning-levels",
+      "headers": {},
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-0m5lym",
+      "name": "HAPPY-REASON-002: Reasoning levels with valid auth returns correct levels",
+      "method": "GET",
+      "path": "/v1/model/response/reasoning-levels",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_contains": {
+          "success": true
+        },
+        "body_schema": {
+          "required_fields": [
+            "success",
+            "reasoning_levels"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-mjk4sf",
+      "name": "AUTH-RESP-001: Create response without auth returns 401",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-ancqoc",
+      "name": "AUTH-RESP-002: Create response with invalid token returns 401",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer expired_or_malformed_token"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-jtr0r6",
+      "name": "AUTH-RESP-003: Create response with empty Bearer token returns 401",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer "
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-jccv5x",
+      "name": "VAL-RESP-004: Empty inputs array returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-fc1ion",
+      "name": "VAL-RESP-005: Missing inputs field returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-iyaaav",
+      "name": "VAL-RESP-006: Temperature above 1.0 returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "temperature": 1.5,
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-3vyh3l",
+      "name": "VAL-RESP-007: Temperature below 0.0 returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "temperature": -0.1,
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-kpn63z",
+      "name": "VAL-RESP-008: top_p above 1.0 returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "top_p": 2.0,
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-egoos0",
+      "name": "VAL-RESP-009: Instructions exceeding 5000 chars returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "instructions": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-4471kk",
+      "name": "VAL-RESP-010: json_schema output mode returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "output_mode": "json_schema",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-sypz2z",
+      "name": "VAL-RESP-011: Invalid output_mode enum value returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "output_mode": "xml",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-uzm6zg",
+      "name": "VAL-RESP-012: Function tool with hyphenated name returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "get-weather",
+            "parameters": {}
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-52toer",
+      "name": "VAL-RESP-013: Function tool with name exceeding 64 chars returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "a_function_name_that_is_exactly_sixty_five_characters_long_xxxxxx",
+            "parameters": {}
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-0e7iqn",
+      "name": "VAL-RESP-014: More than 128 tools returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "fn_000",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_001",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_002",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_003",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_004",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_005",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_006",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_007",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_008",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_009",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_010",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_011",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_012",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_013",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_014",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_015",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_016",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_017",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_018",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_019",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_020",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_021",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_022",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_023",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_024",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_025",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_026",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_027",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_028",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_029",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_030",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_031",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_032",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_033",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_034",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_035",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_036",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_037",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_038",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_039",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_040",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_041",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_042",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_043",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_044",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_045",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_046",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_047",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_048",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_049",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_050",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_051",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_052",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_053",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_054",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_055",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_056",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_057",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_058",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_059",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_060",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_061",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_062",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_063",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_064",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_065",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_066",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_067",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_068",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_069",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_070",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_071",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_072",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_073",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_074",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_075",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_076",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_077",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_078",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_079",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_080",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_081",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_082",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_083",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_084",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_085",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_086",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_087",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_088",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_089",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_090",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_091",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_092",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_093",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_094",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_095",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_096",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_097",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_098",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_099",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_100",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_101",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_102",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_103",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_104",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_105",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_106",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_107",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_108",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_109",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_110",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_111",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_112",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_113",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_114",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_115",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_116",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_117",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_118",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_119",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_120",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_121",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_122",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_123",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_124",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_125",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_126",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_127",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_128",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-85ay9b",
+      "name": "VAL-RESP-015: Tool message without tool_call_id returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "What is the weather?"
+          },
+          {
+            "role": "tool",
+            "content": "{\"temp\": 18}"
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-pe5yo0",
+      "name": "VAL-RESP-016: Mutually exclusive edit_message_id and previous_response_id returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "thread_id": "thread_abc123",
+        "edit_message_id": "msg_123",
+        "previous_response_id": "resp_456",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-tm7aex",
+      "name": "VAL-RESP-017: edit_message_id without thread_id returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "edit_message_id": "msg_123",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-4bwfd1",
+      "name": "VAL-RESP-018: previous_message_id without thread_id returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "previous_message_id": "msg_123",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-pukjk5",
+      "name": "VAL-RESP-019: MCP tool with neither configuration_id nor server_url returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "mcp",
+            "server_label": "my_server"
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-s6r244",
+      "name": "VAL-RESP-020: MCP tool with both configuration_id and server_url returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "mcp",
+            "server_label": "my_server",
+            "configuration_id": "mcp_00000000000000000000000000000001",
+            "server_url": "https://example.com/mcp"
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-fud01r",
+      "name": "VAL-RESP-021: Duplicate MCP server_label returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "mcp",
+            "server_label": "my_server",
+            "server_url": "https://example.com/mcp1"
+          },
+          {
+            "type": "mcp",
+            "server_label": "my_server",
+            "server_url": "https://example.com/mcp2"
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-cbwzj5",
+      "name": "VAL-RESP-022: system_tools with deprecated image_generation key returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "system_tools": {
+          "image_generation": {
+            "mode": "on"
+          }
+        },
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-a6i1as",
+      "name": "VAL-RESP-023: system_tools with invalid key returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "system_tools": {
+          "not_a_real_tool": {
+            "mode": "on"
+          }
+        },
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-0pnqq6",
+      "name": "VAL-RESP-024: system_tools with invalid mode returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "system_tools": {
+          "web_search": {
+            "mode": "always"
+          }
+        },
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-hx3oo6",
+      "name": "VAL-RESP-025: max_output_synapses of 0 returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "max_output_synapses": 0,
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-kl37u7",
+      "name": "VAL-RESP-026: Temperature at exact boundary 0.0 accepted",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Say OK"
+          }
+        ],
+        "temperature": 0.0,
+        "model": "gpt-4o",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_contains": {
+          "success": true
+        },
+        "body_schema": {
+          "required_fields": [
+            "success",
+            "thread_id"
+          ]
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-jj5o95",
+      "name": "VAL-RESP-027: Temperature at exact boundary 1.0 accepted",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Say OK"
+          }
+        ],
+        "temperature": 1.0,
+        "model": "gpt-4o",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 200,
+        "body_contains": {
+          "success": true
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-93oags",
+      "name": "VAL-RESP-028: Function tool with name at exactly 64 chars accepted",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Call the function"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "a_function_name_that_is_exactly_sixty_four_characters_long_xxxxx",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "model": "gpt-4o",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 200
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-20hlb6",
+      "name": "VAL-RESP-029: Exactly 128 tools accepted at boundary",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "fn_000",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_001",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_002",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_003",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_004",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_005",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_006",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_007",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_008",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_009",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_010",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_011",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_012",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_013",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_014",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_015",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_016",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_017",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_018",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_019",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_020",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_021",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_022",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_023",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_024",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_025",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_026",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_027",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_028",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_029",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_030",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_031",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_032",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_033",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_034",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_035",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_036",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_037",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_038",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_039",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_040",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_041",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_042",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_043",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_044",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_045",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_046",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_047",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_048",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_049",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_050",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_051",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_052",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_053",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_054",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_055",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_056",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_057",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_058",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_059",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_060",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_061",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_062",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_063",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_064",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_065",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_066",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_067",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_068",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_069",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_070",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_071",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_072",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_073",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_074",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_075",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_076",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_077",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_078",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_079",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_080",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_081",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_082",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_083",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_084",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_085",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_086",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_087",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_088",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_089",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_090",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_091",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_092",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_093",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_094",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_095",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_096",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_097",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_098",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_099",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_100",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_101",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_102",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_103",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_104",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_105",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_106",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_107",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_108",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_109",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_110",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_111",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_112",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_113",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_114",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_115",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_116",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_117",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_118",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_119",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_120",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_121",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_122",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_123",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_124",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_125",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_126",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "function",
+            "name": "fn_127",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "model": "gpt-4o",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 200
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-2ynr8p",
+      "name": "VAL-RESP-030: image_operations with invalid provider returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "system_tools": {
+          "image_operations": {
+            "mode": "on",
+            "provider": "midjourney"
+          }
+        },
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-l714s9",
+      "name": "VAL-RESP-031: image_operations with invalid model returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "system_tools": {
+          "image_operations": {
+            "mode": "on",
+            "model": "stable-diffusion-xl"
+          }
+        },
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-kdhbog",
+      "name": "VAL-RESP-032: Empty request body returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {},
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-fht6o8",
+      "name": "VAL-RESP-033: Non-JSON content type returns 422 or 415",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "text/plain",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "raw": "hello"
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-9pfzgb",
+      "name": "VAL-RESP-034: Wrong type for inputs (string instead of array) returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": "not an array",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-fz0mui",
+      "name": "VAL-RESP-035: Wrong type for temperature (string) returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "temperature": "hot",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-n1juof",
+      "name": "VAL-RESP-036: MCP tool with invalid configuration_id pattern returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "mcp",
+            "server_label": "test",
+            "configuration_id": "not_valid_format"
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-nokian",
+      "name": "VAL-RESP-037: Function tool description exceeding 1024 chars returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "name": "test_fn",
+            "description": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "parameters": {}
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-6l1hog",
+      "name": "VAL-RESP-038: Files array exceeding 10 items per message returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Check these files",
+            "files": [
+              {
+                "file_id": "file_00000000000000000000000000000001"
+              },
+              {
+                "file_id": "file_00000000000000000000000000000002"
+              },
+              {
+                "file_id": "file_00000000000000000000000000000003"
+              },
+              {
+                "file_id": "file_00000000000000000000000000000004"
+              },
+              {
+                "file_id": "file_00000000000000000000000000000005"
+              },
+              {
+                "file_id": "file_00000000000000000000000000000006"
+              },
+              {
+                "file_id": "file_00000000000000000000000000000007"
+              },
+              {
+                "file_id": "file_00000000000000000000000000000008"
+              },
+              {
+                "file_id": "file_00000000000000000000000000000009"
+              },
+              {
+                "file_id": "file_0000000000000000000000000000000a"
+              },
+              {
+                "file_id": "file_0000000000000000000000000000000b"
+              }
+            ]
+          }
+        ],
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-79ofsv",
+      "name": "VAL-RESP-039: All three message manipulation params together returns 422",
+      "method": "POST",
+      "path": "/v1/model/response",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "body": {
+        "inputs": [
+          {
+            "role": "user",
+            "content": "Hello"
+          }
+        ],
+        "thread_id": "thread_abc123",
+        "edit_message_id": "msg_1",
+        "previous_message_id": "msg_2",
+        "previous_response_id": "resp_3",
+        "stream": false
+      },
+      "assertions": {
+        "status_code": 422
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-px8d06",
+      "name": "AUTH-CANCEL-001: Cancel stream without auth returns 401",
+      "method": "POST",
+      "path": "/v1/model/response/nonexistent_thread/cancel",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-ec11ps",
+      "name": "AUTH-CANCEL-002: Cancel stream with invalid token returns 401",
+      "method": "POST",
+      "path": "/v1/model/response/nonexistent_thread/cancel",
+      "headers": {
+        "Authorization": "Bearer invalid_token"
+      },
+      "assertions": {
+        "status_code": 401,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "tc-v4mau0",
+      "name": "CANCEL-003: Cancel non-existent stream returns 404",
+      "method": "POST",
+      "path": "/v1/model/response/thread_nonexistent_00000000/cancel",
+      "headers": {
+        "Authorization": "Bearer {{auth_token}}"
+      },
+      "assertions": {
+        "status_code": 404,
+        "body_contains": {
+          "success": false
+        }
+      },
+      "created_at": "2026-03-06T15:00:00.000Z",
+      "updated_at": "2026-03-06T15:00:00.000Z"
+    },
+    {
+      "id": "fl-mr0001",
+      "name": "[Flow] FLOW-RESP-001: Simple non-streaming response generation",
+      "method": "FLOW",
+      "path": "flows/model/test_model_response.py::TestModelResponseFlows::test_simple_response_generation",
+      "headers": {},
+      "body": {},
+      "assertions": {},
+      "flow_metadata": {
+        "file": "flows/model/test_model_response.py",
+        "steps": ["authenticate", "generate_response", "assertions_passed"],
+        "markers": ["flow", "model"],
+        "description": "POST /v1/model/response with simple user message, stream=false, no thread_id. Verify response structure.",
+        "prerequisites": ["Backend running", "Valid auth token"],
+        "business_rules": ["Response contains thread_id, response text, response_id", "thread_id starts with thread_"]
+      },
+      "created_at": "2026-03-06T16:00:00.000Z",
+      "updated_at": "2026-03-06T16:00:00.000Z"
+    },
+    {
+      "id": "fl-mr0002",
+      "name": "[Flow] FLOW-RESP-002: Thread continuation",
+      "method": "FLOW",
+      "path": "flows/model/test_model_response.py::TestModelResponseFlows::test_thread_continuation",
+      "headers": {},
+      "body": {},
+      "assertions": {},
+      "flow_metadata": {
+        "file": "flows/model/test_model_response.py",
+        "steps": ["authenticate", "create_thread", "continue_thread", "assertions_passed"],
+        "markers": ["flow", "model"],
+        "description": "Create a new thread then continue it with a follow-up message. Verify same thread_id.",
+        "prerequisites": ["Backend running", "Valid auth token"],
+        "business_rules": ["Second response returns same thread_id", "Follow-up response is non-empty"]
+      },
+      "created_at": "2026-03-06T16:00:00.000Z",
+      "updated_at": "2026-03-06T16:00:00.000Z"
+    },
+    {
+      "id": "fl-mr0003",
+      "name": "[Flow] FLOW-RESP-003: Organization access denied",
+      "method": "FLOW",
+      "path": "flows/model/test_model_response.py::TestModelResponseFlows::test_organization_access_denied",
+      "headers": {},
+      "body": {},
+      "assertions": {},
+      "flow_metadata": {
+        "file": "flows/model/test_model_response.py",
+        "steps": ["authenticate", "request_wrong_org", "assertions_passed"],
+        "markers": ["flow", "model"],
+        "description": "POST /v1/model/response with organization_id the user cannot access. Assert 403 ORGANIZATION_ACCESS_DENIED.",
+        "prerequisites": ["Backend running", "Valid auth token"],
+        "business_rules": ["Wrong org returns 403", "Error code is ORGANIZATION_ACCESS_DENIED"]
+      },
+      "created_at": "2026-03-06T16:00:00.000Z",
+      "updated_at": "2026-03-06T16:00:00.000Z"
+    },
+    {
+      "id": "fl-mr0004",
+      "name": "[Flow] FLOW-RESP-004: Function tool calling",
+      "method": "FLOW",
+      "path": "flows/model/test_model_response.py::TestModelResponseFlows::test_function_tool_calling",
+      "headers": {},
+      "body": {},
+      "assertions": {},
+      "flow_metadata": {
+        "file": "flows/model/test_model_response.py",
+        "steps": ["authenticate", "tool_call_request", "tool_result_response", "assertions_passed"],
+        "markers": ["flow", "model"],
+        "description": "Register a function tool, prompt model to call it, then respond with tool result.",
+        "prerequisites": ["Backend running", "Valid auth token"],
+        "business_rules": ["Model should attempt to call the registered function", "Tool result is incorporated into final response"]
+      },
+      "created_at": "2026-03-06T16:00:00.000Z",
+      "updated_at": "2026-03-06T16:00:00.000Z"
+    },
+    {
+      "id": "fl-mr0005",
+      "name": "[Flow] FLOW-RESP-005: Edit message in thread",
+      "method": "FLOW",
+      "path": "flows/model/test_model_response.py::TestModelResponseFlows::test_edit_message",
+      "headers": {},
+      "body": {},
+      "assertions": {},
+      "flow_metadata": {
+        "file": "flows/model/test_model_response.py",
+        "steps": ["authenticate", "create_thread", "fetch_message_id", "edit_message", "assertions_passed"],
+        "markers": ["flow", "model", "destructive"],
+        "description": "Create a thread, then edit the user message using edit_message_id.",
+        "prerequisites": ["Backend running", "Valid auth token"],
+        "business_rules": ["edit_message_id replaces message and regenerates response", "Thread ID preserved after edit"]
+      },
+      "created_at": "2026-03-06T16:00:00.000Z",
+      "updated_at": "2026-03-06T16:00:00.000Z"
+    },
+    {
+      "id": "fl-mr0006",
+      "name": "[Flow] FLOW-RESP-006: Branch conversation",
+      "method": "FLOW",
+      "path": "flows/model/test_model_response.py::TestModelResponseFlows::test_branch_conversation",
+      "headers": {},
+      "body": {},
+      "assertions": {},
+      "flow_metadata": {
+        "file": "flows/model/test_model_response.py",
+        "steps": ["authenticate", "create_thread", "fetch_branch_point", "branch_conversation", "assertions_passed"],
+        "markers": ["flow", "model", "destructive"],
+        "description": "Create a thread, then branch from a specific message using previous_message_id.",
+        "prerequisites": ["Backend running", "Valid auth token"],
+        "business_rules": ["previous_message_id creates a branch in the conversation", "Thread ID preserved after branch"]
+      },
+      "created_at": "2026-03-06T16:00:00.000Z",
+      "updated_at": "2026-03-06T16:00:00.000Z"
+    },
+    {
+      "id": "fl-mr0007",
+      "name": "[Flow] FLOW-RESP-007: Reasoning output verification",
+      "method": "FLOW",
+      "path": "flows/model/test_model_response.py::TestModelResponseFlows::test_reasoning_output",
+      "headers": {},
+      "body": {},
+      "assertions": {},
+      "flow_metadata": {
+        "file": "flows/model/test_model_response.py",
+        "steps": ["authenticate", "reasoning_request", "assertions_passed"],
+        "markers": ["flow", "model"],
+        "description": "POST /v1/model/response with reasoning.effort='high'. Verify reasoning_content field if available.",
+        "prerequisites": ["Backend running", "Valid auth token"],
+        "business_rules": ["Request with reasoning effort succeeds", "Response may contain reasoning_content field"]
+      },
+      "created_at": "2026-03-06T16:00:00.000Z",
+      "updated_at": "2026-03-06T16:00:00.000Z"
+    },
+    {
+      "id": "fl-mr0008",
+      "name": "[Flow] FLOW-RESP-008: Stream cancellation (placeholder - skipped)",
+      "method": "FLOW",
+      "path": "flows/model/test_model_response.py::TestModelResponseFlows::test_stream_cancellation",
+      "headers": {},
+      "body": {},
+      "assertions": {},
+      "flow_metadata": {
+        "file": "flows/model/test_model_response.py",
+        "steps": [],
+        "markers": ["flow", "model"],
+        "description": "SKIPPED: Stream cancellation requires async streaming client. Placeholder for future implementation.",
+        "prerequisites": ["Async test harness", "Backend running"],
+        "business_rules": ["Cancel active stream returns cancel_mode", "SSE events include response.cancelled"]
+      },
+      "created_at": "2026-03-06T16:00:00.000Z",
+      "updated_at": "2026-03-06T16:00:00.000Z"
+    }
+  ]
+}

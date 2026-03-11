@@ -13,5 +13,7 @@
       "WebFetch(domain:ui.shadcn.com)",
       "WebFetch(domain:localhost)"
     ]
-  }
+  },
+  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": 10,
+  "teammateMode": "in-process"
 }

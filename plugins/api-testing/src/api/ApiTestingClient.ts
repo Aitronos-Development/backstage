@@ -115,12 +115,14 @@ export class ApiTestingClient {
     routeGroup: string,
     variables?: Record<string, string>,
     environment?: string,
+    initiator?: 'user' | 'agent',
+    executionId?: string,
   ): Promise<ExecutionResult> {
     const base = await this.baseUrl();
     const response = await this.fetchApi.fetch(`${base}/execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ testCaseId, routeGroup, variables, environment }),
+      body: JSON.stringify({ testCaseId, routeGroup, variables, environment, initiator, executionId }),
     });
     if (!response.ok) {
       throw new Error(
@@ -134,6 +136,8 @@ export class ApiTestingClient {
     routeGroup: string,
     variables?: Record<string, string>,
     environment?: string,
+    initiator?: 'user' | 'agent',
+    testCaseIds?: string[],
   ): Promise<
     Array<{ testCaseId: string; result: Omit<ExecutionResult, 'executionId'> }>
   > {
@@ -141,7 +145,7 @@ export class ApiTestingClient {
     const response = await this.fetchApi.fetch(`${base}/execute-all`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ routeGroup, variables, environment }),
+      body: JSON.stringify({ routeGroup, variables, environment, initiator, testCaseIds }),
     });
     if (!response.ok) {
       throw new Error(
@@ -288,5 +292,68 @@ export class ApiTestingClient {
     // WebSocket URL derives from the discovery base URL
     // Replace http(s) with ws(s)
     return '';
+  }
+
+  // Orchestrator methods
+  async runWithOrchestrator(
+    routeGroup: string,
+    variables?: Record<string, string>,
+    environment?: string
+  ): Promise<{ runId: string; status: string; summary: any; duration: number }> {
+    const base = await this.baseUrl();
+    const encoded = this.encodeRouteGroup(routeGroup);
+    const response = await this.fetchApi.fetch(
+      `${base}/orchestrator/run/${encoded}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variables, environment }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to run orchestrator')
+      );
+    }
+
+    return response.json();
+  }
+
+  async getOrchestratorStatus(runId: string): Promise<any> {
+    const base = await this.baseUrl();
+    const response = await this.fetchApi.fetch(
+      `${base}/orchestrator/status/${runId}`
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to get orchestrator status')
+      );
+    }
+
+    return response.json();
+  }
+
+  async getOrchestratorHistory(
+    routeGroup: string,
+    limit?: number
+  ): Promise<{ history: any[] }> {
+    const base = await this.baseUrl();
+    const encoded = this.encodeRouteGroup(routeGroup);
+    const params = new URLSearchParams();
+    if (limit) params.set('limit', limit.toString());
+
+    const response = await this.fetchApi.fetch(
+      `${base}/orchestrator/history/${encoded}?${params}`
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        await this.extractResponseError(response, 'Failed to get orchestrator history')
+      );
+    }
+
+    return response.json();
   }
 }

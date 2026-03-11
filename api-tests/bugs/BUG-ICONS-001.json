@@ -1,0 +1,24 @@
+{
+  "id": "BUG-ICONS-001",
+  "title": "CRITICAL: Icon Management API Endpoints Not Implemented",
+  "description": "## Summary\nAll 5 documented icon management endpoints return 404 Not Found despite having complete implementation files, services, and documentation.\n\n## Affected Endpoints\n- POST /v1/icons/organizations/{org_id} - Upload icon\n- GET /v1/icons/{icon_id} - Serve icon\n- PATCH /v1/icons/organizations/{org_id}/{icon_id} - Update metadata\n- DELETE /v1/icons/organizations/{org_id}/icons/{icon_id} - Delete icon\n- GET /v1/icons/organizations/{org_id} - List icons\n\n## Root Cause\nThe icon router is not registered in app/main.py despite having:\n- Complete OpenAPI specification\n- Icon service implementation (app/services/icons/icon_service.py)\n- Database models and repositories\n- Comprehensive API documentation\n\n## Impact\n- Icon management feature is completely non-functional\n- Users cannot upload, view, or manage icons\n- Assistant icon assignment will fail\n\n## Steps to Reproduce\n1. Make any request to /v1/icons/* endpoints\n2. Receive 404 Not Found\n\n## Expected Behavior\nEndpoints should be functional and return appropriate responses\n\n## Test Results\n- 22 test cases created covering happy path, sad path, security, and edge cases\n- All tests fail with 404 Not Found\n- Test suite: v1-icons.json",
+  "priority": "critical",
+  "severity": "blocker",
+  "status": "open",
+  "assignee": "unassigned",
+  "component": "Icon Management API",
+  "labels": ["missing-implementation", "api", "icons", "critical-bug", "router-not-registered"],
+  "environment": "production",
+  "reproducible": "always",
+  "affectedVersion": "current",
+  "discoveredBy": "Automated API Testing - Bug Detector",
+  "discoveredAt": "2025-03-04T10:00:00Z",
+  "testSuite": "v1-icons",
+  "evidenceLogs": {
+    "curlTest": "curl http://localhost:8000/v1/icons/test -> HTTP/1.1 404 Not Found",
+    "openApiSpec": "Endpoints documented in openapi.json",
+    "serviceCode": "app/services/icons/icon_service.py exists with full implementation"
+  },
+  "suggestedFix": "Register icon router in app/main.py:\n1. Import icon router\n2. Add app.include_router(icon_router, prefix='/v1/icons', tags=['Icons'])",
+  "businessImpact": "High - Core feature completely unavailable to all users"
+}
